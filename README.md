@@ -41,7 +41,7 @@ name | description | default value
 [STS].addContainers | yaml inject to add more containers
 [STS].volumes | yaml inject to add more volumes
 [STS].volumeMounts | yaml inject to add more volume mounts
-[STS].addVolumeClaims | yaml inject to add STS dependent volume claims. See [here] (https://kubernetes.io/docs/tutorials/stateful-application/basic-stateful-set/) for more info about these
+[STS].addVolumeClaims | yaml inject to add STS dependent volume claims. See [here](https://kubernetes.io/docs/tutorials/stateful-application/basic-stateful-set/) for more info about these
 [STS].thread_count | applies only to proxies, and is the proxy worker thread count | 3 
 
 ### Advanced overriding values (use with care)
