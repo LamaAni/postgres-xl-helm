@@ -51,7 +51,7 @@ name | description | default value
 name | description | default value 
 --- | --- | ---
 homedir | the image home directory | /var/lib/postgresql 
-overrideEnvs | a set of envs which re added after the chart core envs, and allows to override the chart. | [null]
+overrideEnvs | a set of envs which are added after the chart core envs, and allows to override the chart. | [null]
 
 #### For any stateful set
 
