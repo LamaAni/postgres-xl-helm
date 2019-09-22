@@ -56,7 +56,7 @@ overrideEnvs | a set of envs which re added after the chart core envs, and allow
 #### For any stateful set
 
 name | description
---- | --- | ---
+--- | ---
 [STS].injectMainContainerYaml | inject yaml into the main container.
 [STS].injectSpecYaml | inject yaml into the template spec.
 [STS].injectSTSyaml | inject yaml into the main STS spec.
