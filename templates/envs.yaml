@@ -1,0 +1,43 @@
+{{ $app_name := include "global.app_name" . -}}
+{{ $chart_name := include "global.chart_full_name" . -}}
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: {{$app_name}}-envs
+  labels:
+    app: {{ $app_name }}
+    chart: {{ $chart_name }}
+data:
+  PORT_WAIT_INTERVAL: "1"
+  PORT_WAIT_TRIES: "60"
+  PORT_WAIT_TIMEOUT: "1"
+  LOGGING_PREFIX: "PGXL:HELM:"
+  RESET_DB: "false"
+
+  # Added envs. These will not affect the db operation.
+  {{- if .Values.envs }}
+  {{- toYaml .Values.envs | indent 2}}}
+  {{- end }}
+  
+  PG_GTM_HOST: {{ $app_name }}-svc-gtm
+  PG_GTM_PORT: "{{ .Values.managers_port }}"
+  PG_GTM_COORDINATOR_SVC_HOST: {{ $app_name }}-svc
+  PG_PORT: "{{ .Values.postgres_port }}"
+  PG_HOST: "0.0.0.0"
+  PGDATA: "{{ .Values.homedir }}/storage/data"
+  STORAGE_MOUNT_PATH: "{{ .Values.homedir }}/storage"
+  PROXY_COUNT: "{{ .Values.proxies.count }}"
+  PROXY_SERVICE: {{ $app_name }}-svc-pxy
+  PROXY_ENABLED:  "{{ .Values.proxies.enabled }}"
+  PROXY_THREAD_COUNT: "{{ .Values.proxies.thread_count }}"
+  COORDINATOR_COUNT: "{{ .Values.coordinators.count }}"
+  DATANODE_COUNT: "{{ .Values.datanodes.count }}"
+  DATANODE_BASENAME: "{{ $app_name }}-dn"
+  COORDINATOR_BASENAME: "{{ $app_name }}-crd"
+  DATANODE_SERVICE: {{ $app_name }}-svc-dn
+  COORDINATOR_SERVICE: {{ $app_name }}-svc
+  # Added envs, these may affect pod operation.
+  {{- if .Values.overrideEnvs }}
+  {{- toYaml .Values.overrideEnvs | indent 2}}}
+  {{- end }}
+  

@@ -1,0 +1,7 @@
+apiVersion: v1
+appVersion: "1.0"
+description: |
+    Postgres-XL (https://www.postgres-xl.org/) is an all-purpose fully ACID open source multi node scalable SQL database solution, 
+    based on PostgreSQL (https://www.postgresql.org/).
+name: postgres-xl
+version: 0.2.0

@@ -1,0 +1,339 @@
+{{ $app_name := include "global.app_name" . -}}
+{{ $chart_name := include "global.chart_full_name" . -}}
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: {{$app_name}}-scripts
+  labels:
+    app: {{ $app_name }}
+    chart: {{ $chart_name }}
+data:
+
+  ######################
+  # Methods
+
+  wait_for_connection: |
+    #!/usr/bin/env bash
+    # Helper method, wait for connection.
+    # Usage: wait_for_connection [hostname] [port]
+    HOST=$1
+    PORT=$2
+
+    : ${PORT_WAIT_INTERVAL:="1"}
+    : ${PORT_WAIT_TRIES:="60"}
+    : ${PORT_WAIT_TIMEOUT:="1"}
+
+    echo "$LOGGING_PREFIX Checking $HOST:$PORT is open with an interval of $PORT_WAIT_INTERVAL, max $PORT_WAIT_TRIES times.."
+    WAIT_INDEX=0
+    while true; do
+      nc -w $PORT_WAIT_TIMEOUT -zv "$HOST" "$PORT" &> /dev/null
+      if [ $? -ne 0 ]; then
+        if [ $WAIT_INDEX -gt $PORT_WAIT_TRIES ]; then
+          echo "$LOGGING_PREFIX Error, timedout while waiting for port $PORT on $HOST"
+          exit 2
+        fi
+        echo "$LOGGING_PREFIX Port $PORT not available on $HOST, retry in $PORT_WAIT_INTERVAL"
+      else
+        echo "$LOGGING_PREFIX Port $PORT is open on $HOST"
+        break
+      fi
+      WAIT_INDEX=$((WAIT_INDEX+1))
+      sleep "$PORT_WAIT_INTERVAL"
+    done
+
+  initialize_env_dependencies: |
+    #!/usr/bin/env bash
+    # Initializes the env variables in the pod,
+    # depending on pod type.
+    POD_INDEX=$(echo "$POD_NAME" | grep -Eo "[0-9]+\s*$")
+    export POD_INDEX
+
+    if [ -z "$PG_NODE" ]; then
+      case "$NODE_TYPE" in 
+        datanode)
+          PG_NODE="DN_${POD_INDEX}"
+          POD_CLUSTER_INDEX=$((POD_INDEX+COORDINATOR_COUNT+PROXY_COUNT+1))
+        ;;
+        coordinator)
+          PG_NODE="CN_${POD_INDEX}"
+          POD_CLUSTER_INDEX=$((POD_INDEX+PROXY_COUNT+1))
+        ;;
+        proxy)
+          PG_NODE="PXY_${POD_INDEX}"
+          POD_CLUSTER_INDEX=$((POD_INDEX+1))
+        ;;
+        *)
+          if [ -n "$NODE_TYPE" ]; then
+            echo "$LOGGING_PREFIX Cluster node cannot be defined for type $NODE_TYPE, skipping"
+          fi
+        ;;
+      esac
+    fi
+
+    export POD_CLUSTER_INDEX
+
+  initialize_networks: |
+    #!/usr/bin/env bash
+    # Initialize the host connection to allow all networks, 
+    # since we are in kuberntes, the assumption is the current 
+    # network is a trusted network.
+    echo "host all all 0.0.0.0/0 trust" >> "${PGDATA}/pg_hba.conf"
+    echo "$LOGGING_PREFIX Added network config to allow all"
+
+  register_node: |
+    #!/usr/bin/env bash
+    # Script to register the nodes in postgres
+    cur_path="$(dirname ${BASH_SOURCE[0]})"
+    source "$cur_path/initialize_env_dependencies"
+
+    while true; do
+      pg_isready &> /dev/null 
+      if [ $? -eq 0 ]; then
+        break
+      else 
+        echo "$LOGGING_PREFIX Waiting for database to be ready before starting cluster register"
+        sleep $PORT_WAIT_INTERVAL
+      fi
+    done
+
+    echo "$LOGGING_PREFIX Registering cluster nodes on $POD_NAME.."
+
+    function register_node(){
+      local type=$1
+      local idx=$2
+      case "$type" in 
+        datanode)
+          node_full_name="${DATANODE_BASENAME}-${idx}"
+          node_host="${node_full_name}.${DATANODE_SERVICE}"
+          node_name="DN_$i"
+        ;;
+        coordinator)
+          node_full_name="${COORDINATOR_BASENAME}-${idx}"
+          node_host="${node_full_name}.${COORDINATOR_SERVICE}"
+          node_name="CN_$i"
+        ;;
+      esac
+
+      local cmd="CREATE"
+      local host_ip="$POD_IP"
+      if [ "$node_full_name" = "$POD_NAME" ]; then
+        cmd="ALTER"
+        do_wait_for_port=1
+        echo "$LOGGING_PREFIX Registering self.."
+      else
+        while true; do
+          host_ip=$(getent hosts "$node_host" | awk '{ print $1 }')
+          if [ -z "$host_ip" ]; then
+            echo "$LOGGING_PREFIX Waiting for host to be ready @ $node_host ..."
+            sleep $PORT_WAIT_INTERVAL
+          else
+            break
+          fi
+        done
+      fi
+      echo "$LOGGING_PREFIX Resovled $node_host -> $host_ip, registering node on local as $type:"
+
+      local sql_script="$cmd NODE $node_name WITH (TYPE = '$type', HOST = '$node_host', PORT = {{ .Values.postgres_port }});"
+      echo "$LOGGING_PREFIX $sql_script";
+      psql -c "$sql_script" | xargs -L 1 echo "$LOGGING_PREFIX"
+    }
+
+    # registering datanodes.
+    for i in $(seq 0 $DATANODE_COUNT); do 
+      if [ $i -eq $DATANODE_COUNT ]; then break; fi
+      register_node datanode $i
+    done
+
+    for i in $(seq 0 $COORDINATOR_COUNT); do 
+      if [ $i -eq $COORDINATOR_COUNT ]; then break; fi
+      register_node coordinator $i
+    done
+
+    echo "$LOGGING_PREFIX Reloading pool...  "
+    psql -q -c "SELECT pgxc_pool_reload();"
+    echo "$LOGGING_PREFIX Registered node list:  "
+    psql -q -c "SELECT * FROM pgxc_node"
+
+    echo "$LOGGING_PREFIX Seeting state to active."
+    echo "$(date)" >> ~/service_activation_time
+    echo "$LOGGING_PREFIX Node ready."
+  
+  initialize_postgres_db: |
+    #!/usr/bin/env bash
+    # Initialize the postgres database.
+    cur_path="$(dirname ${BASH_SOURCE[0]})"
+    echo "$LOGGING_PREFIX Initializing database on node $PG_NODE"
+
+    if [ "$RESET_DB" == "true" ] && [ -d "${PGDATA}" ]; then
+      rm -R "${PGDATA}"
+    fi
+
+    if [ ! -f "${PGDATA}/postgres.conf" ]; then
+      echo "$LOGGING_PREFIX Database configuration not found, calling initdb"
+      initdb \
+        -D "${PGDATA}" \
+        --nodename="${PG_NODE}"
+    
+      source "$cur_path/initialize_networks"
+      cat /config/pg_config_append >> "${PGDATA}/postgres.conf"
+      cat /config/config_append >> "${PGDATA}/postgres.conf"
+    else
+      echo "$LOGGING_PREFIX Database configuration found, init skipped."
+    fi
+    
+    # required for postgrs permissions. 
+    # the loaded values are actually set by kuberntes. :(
+    echo "$LOGGING_PREFIX Set data folder permissions 0700"
+    chmod -R 0700 ${PGDATA}
+  
+  configure_postgres_service_connections: |
+    #!/usr/bin/env bash
+    cur_path="$(dirname ${BASH_SOURCE[0]})"
+
+    # check for proxy.
+    if [ "$PROXY_ENABLED" = "true" ]; then
+      export PG_GTM_HOST="$PROXY_SERVICE"
+      echo "$LOGGING_PREFIX looking for gateway manager proxy host @ $PG_GTM_HOST..."
+    else 
+      echo "$LOGGING_PREFIX looking for gateway manager host @ $PG_GTM_HOST..."
+    fi
+
+    # waiting for gateway manager.
+    "$cur_path/wait_for_connection" "$PG_GTM_HOST" "$PG_GTM_PORT" || exit $?
+
+  ####################
+  # Entrypoints
+  gateway_manager_entrypoint: |
+    #!/usr/bin/env bash
+    # bash script for gateway manager.
+    echo "$LOGGING_PREFIX Starting gateway manager"
+
+    cur_path="$(dirname ${BASH_SOURCE[0]})"
+    source "$cur_path/initialize_env_dependencies"
+
+    # initialize the gtm manager
+    if [ "$RESET_DB" == "true" ] && [ -d "${PGDATA}" ]; then
+      rm -R "${PGDATA}"
+    fi
+    
+    if [ ! -f "${PGDATA}/gtm.conf" ]; then
+      echo "$LOGGING_PREFIX GTM configuration not found, calling initdb"
+      initgtm -D "${PGDATA}" -Z gtm
+    
+      cat /config/gtm_config_append >> "${PGDATA}/gtm.conf"
+      cat /config/config_append >> "${PGDATA}/gtm.conf"
+      source "$cur_path/initialize_networks"
+    else
+      echo "$LOGGING_PREFIX GTM configuration found, init skipped."
+    fi
+  
+    # permissions
+    echo "$LOGGING_PREFIX Set data folder permissions 0700"
+    chmod -R 0700 ${PGDATA}
+
+    # start the gateway manager
+    gtm -D "${PGDATA}" -h "${PG_HOST}" -n "${PG_NODE}" -p "${PG_GTM_PORT}" -l /dev/stdout
+  
+  proxy_entrypoint: |
+    #!/usr/bin/env bash
+    # proxy startup bash script
+    echo "$LOGGING_PREFIX Starting gateway manager proxy"
+    cur_path="$(dirname ${BASH_SOURCE[0]})"
+    source "$cur_path/initialize_env_dependencies"
+
+    # initialize the gtm_proxy manager
+    initgtm -D "${PGDATA}" -Z gtm_proxy
+
+    # config
+    cat /config/gtm_config_append >> "${PGDATA}/gtm_proxy.conf"
+    cat /config/config_append >> "${PGDATA}/gtm_proxy.conf"
+    source "$cur_path/initialize_networks"
+
+    # start the proxy.
+    PROXY_ID="$POD_CLUSTER_INDEX"
+    PROXY_HOST="$POD_IP"
+    echo "$LOGGING_PREFIX looking for gateway manager..."
+    "$cur_path/wait_for_connection" "$PG_GTM_HOST" "$PG_GTM_PORT"
+    echo "$LOGGING_PREFIX Starting proxy $PROXY_ID @ $PROXY_HOST:$PG_GTM_PORT -> $PG_GTM_HOST:$PG_GTM_PORT .."
+    gtm_proxy \
+      -D "${PGDATA}" \
+      -h "${PROXY_HOST}" \
+      -p "${PG_GTM_PORT}" \
+      -i "${PROXY_ID}" \
+      -s "${PG_GTM_HOST}" \
+      -t "${PG_GTM_PORT}" \
+      -n "${PROXY_THREAD_COUNT}" \
+      -l /dev/stdout
+
+  data_node_entrypoint: |
+    #!/usr/bin/env bash
+    # Datanode initialization script
+    echo "$LOGGING_PREFIX Starting postgres as datanode"
+    cur_path="$(dirname ${BASH_SOURCE[0]})"
+    source "$cur_path/initialize_env_dependencies" || exit $?
+    
+    # connecting to cluster
+    source "$cur_path/configure_postgres_service_connections"
+
+    # initialize the database.
+    source "$cur_path/initialize_postgres_db" || exit $?
+
+    # start the node register in the bg.
+    "$cur_path/register_node" &
+
+    # starting postgres
+    postgres \
+        -D "${PGDATA}" \
+        -h "${PG_HOST}" \
+        -p "${PG_PORT}" \
+        -c gtm_host="${PG_GTM_HOST}" \
+        -c gtm_port="${PG_GTM_PORT}" \
+        --datanode
+
+  coordinator_entrypoint: |
+    #!/usr/bin/env bash
+    # Coordinator initialization script
+    echo "$LOGGING_PREFIX Starting postgres as datanode"
+    cur_path="$(dirname ${BASH_SOURCE[0]})"
+    source "$cur_path/initialize_env_dependencies" || exit $?
+
+    # connecting to cluster.
+    source "$cur_path/configure_postgres_service_connections"
+
+    # initialize the database.
+    source "$cur_path/initialize_postgres_db" || exit $?
+
+    # start the node register in the bg.
+    "$cur_path/register_node" &
+
+    # starting postgres.
+    postgres \
+        -D "${PGDATA}" \
+        -h "${PG_HOST}" \
+        -p "${PG_PORT}" \
+        -c gtm_host="${PG_GTM_HOST}" \
+        -c gtm_port="${PG_GTM_PORT}" \
+        --coordinator
+
+  ########################3
+  # Kubernetes methods
+
+  pg_healthcheck: |
+    #!/usr/bin/env bash
+    pg_isready || exit 2
+
+  nodes_healthcheck: |
+    #!/usr/bin/env bash
+
+    # check all datanodes are connected.
+    for i in $(seq 0 $DATANODE_COUNT); do 
+      if [ $i -eq $DATANODE_COUNT ]; then break; fi
+      node_full_name="${DATANODE_BASENAME}-${i}"
+      node_host="${node_full_name}.${DATANODE_SERVICE}"
+
+      nc -zv "$node_host" {{ .Values.postgres_port }} &> /dev/null
+      if [ $? -ne 0 ]; then
+        echo "$LOGGING_PREFIX Cluster not ready, failed to connect to datanode at $node_host" >> /dev/stderr
+        exit 1
+      fi
+    done

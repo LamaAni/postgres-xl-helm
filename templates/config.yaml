@@ -1,0 +1,24 @@
+{{ $app_name := include "global.app_name" . -}}
+{{ $chart_name := include "global.chart_full_name" . -}}
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: {{$app_name}}-cfg
+  labels:
+    app: {{ $app_name }}
+    chart: {{ $chart_name }}
+data:
+  config_append: |
+    # applies only on startup.
+    listen_addresses = '*'
+{{- if .Values.config.append }}
+{{ .Values.config.append | indent 4 }}
+{{- end }}
+
+  pg_config_append: |
+    # applies only on startup.
+    log_min_messages = {{ lower .Values.config.log_level }}
+
+  gtm_config_append: |
+    # applies only on startup.
+    log_min_messages = {{ upper .Values.config.log_level }}

@@ -1,0 +1,127 @@
+{{- $app_name := include "global.app_name" . -}}
+{{- $chart_name := include "global.chart_full_name" . -}}
+{{- $config_col := .Values.proxies -}}
+{{- if $config_col.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $app_name }}-svc-pxy
+  labels:
+    app: {{ $app_name }}
+    chart: {{ $chart_name }}
+    type: proxy
+{{- if .Values.extraLabels }}
+{{ toYaml .Values.extraLabels | indent 4 }}
+{{- end }}
+spec:
+  ports:
+  - port: {{ .Values.managers_port }}
+    protocol: TCP
+    targetPort: {{ .Values.managers_port }}
+    name: gtm
+  clusterIP: None
+  selector:
+    app: {{ $app_name }}
+    chart: {{ $chart_name }}
+    type: proxy
+{{- if .Values.extraLabels }}
+{{ toYaml .Values.extraLabels | indent 4 }}
+{{- end }}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata: 
+  name: {{ $app_name }}-pxy
+  labels:
+    app: {{ $app_name }}
+    chart: {{ $chart_name }}
+    type: proxy
+{{- if .Values.extraLabels }}
+{{ toYaml .Values.extraLabels | indent 4 }}
+{{- end }}
+spec:
+  serviceName: {{ $app_name }}-svc-pxy
+  replicas: {{ .Values.proxies.count }}
+  podManagementPolicy: Parallel
+  selector:
+    matchLabels:
+      app: {{ $app_name }}
+      chart: {{ $chart_name }}
+      type: proxy
+{{- if .Values.extraLabels }}
+{{ toYaml .Values.extraLabels | indent 6 }}
+{{- end }}
+{{- if $config_col.injectSTSYaml }}
+{{ toYaml $config_col.injectSTSYaml | indent 2 }}
+{{- end }}
+  template:
+    metadata:
+      labels:
+        app: {{ $app_name }}
+        chart: {{ $chart_name }}
+        type: proxy
+{{- if .Values.extraLabels }}
+{{ toYaml .Values.extraLabels | indent 8 }}
+{{- end }}
+    spec:
+{{- if $config_col.injectSpecYaml }}
+{{ toYaml $config_col.injectSpecYaml | indent 6 }}
+{{- end }}
+      containers:
+      - name: proxy
+        image: {{ .Values.image }}
+        ports:
+          - containerPort: {{ .Values.managers_port }}
+            name: gtm
+        command:
+          - bash
+          - /entry/proxy_entrypoint
+        resources:
+{{- if $config_col.resources }}
+{{ toYaml $config_col.resources | indent 10 }}
+{{- end }}
+        envFrom:
+        - configMapRef:
+            name: {{$app_name}}-envs
+        env:
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: POD_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+          - name: NODE_TYPE
+            value: proxy
+        volumeMounts:
+          - name: {{$app_name}}-scripts
+            mountPath: /entry
+          - name: {{$app_name}}-cfg
+            mountPath: /config
+          - name: datastore
+            mountPath: {{ .Values.homedir }}/storage
+{{- if $config_col.volumeMounts }}
+{{ toYaml $config_col.volumeMounts | indent 10 }}
+{{- end }}
+{{- if $config_col.injectMainContainerYaml }}
+{{ toYaml $config_col.injectMainContainerYaml | indent 8 }}
+{{- end }}
+{{- if $config_col.addContainers }}
+{{ toYaml $config_col.addContainers | indent 6 }}
+{{- end }}  
+      volumes:
+        - name: datastore
+          emptyDir: {}
+        - name: {{$app_name}}-scripts
+          configMap:
+            name: {{$app_name}}-scripts
+            defaultMode: 0777
+        - name: {{$app_name}}-cfg
+          configMap:
+            name: {{$app_name}}-cfg
+            defaultMode: 0777
+{{- if $config_col.volumes }}
+{{ toYaml $config_col.volumes | indent 8 }}
+{{- end }}
+{{- end -}}

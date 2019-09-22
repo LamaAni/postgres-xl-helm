@@ -1,0 +1,150 @@
+{{ $app_name := include "global.app_name" . -}}
+{{ $chart_name := include "global.chart_full_name" . -}}
+{{- $config_col := .Values.coordinators -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $app_name }}-svc
+  labels:
+    app: {{ $app_name }}
+    chart: {{ $chart_name }}
+    type: coordinator
+{{- if .Values.extraLabels }}
+{{ toYaml .Values.extraLabels | indent 4 }}
+{{- end }}
+spec:
+  ports:
+  - port: {{ .Values.postgres_port }}
+    name: pg
+  clusterIP: None
+  selector:
+    app: {{ $app_name }}
+    chart: {{ $chart_name }}
+    type: coordinator
+{{- if .Values.extraLabels }}
+{{ toYaml .Values.extraLabels | indent 4 }}
+{{- end }}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata: 
+  name: {{ $app_name }}-crd
+  labels:
+    app: {{ $app_name }}
+    chart: {{ $chart_name }}
+    type: coordinator
+{{- if .Values.extraLabels }}
+{{ toYaml .Values.extraLabels | indent 4 }}
+{{- end }}
+spec:
+  serviceName: {{ $app_name }}-svc
+  replicas: {{ .Values.coordinators.count }}
+  podManagementPolicy: Parallel
+  volumeClaimTemplates:
+{{- if $config_col.storageResources }}
+    - metadata:
+        name: datastore
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+{{ toYaml $config_col.storageResources | indent 10 }}
+{{- end }}
+{{- if $config_col.addVolumeClaims }}
+{{ toYaml $config_col.addVolumeClaims | indent 4 }}
+{{- end }}
+  selector:
+    matchLabels:
+      app: {{ $app_name }}
+      chart: {{ $chart_name }}
+      type: coordinator
+{{- if .Values.extraLabels }}
+{{ toYaml .Values.extraLabels | indent 6 }}
+{{- end }}
+  template:
+    metadata:
+      labels:
+        app: {{ $app_name }}
+        chart: {{ $chart_name }}
+        type: coordinator
+{{- if .Values.extraLabels }}
+{{ toYaml .Values.extraLabels | indent 8 }}
+{{- end }}
+    spec:
+      securityContext:
+        fsGroup: 3000
+{{- if $config_col.injectSpecYaml }}
+{{ toYaml $config_col.injectSpecYaml | indent 6 }}
+{{- end }}
+      containers:
+      - name: coordinator
+        image: {{ .Values.image }}
+        ports:
+          - containerPort: {{ .Values.postgres_port }}
+            name: pg
+        command:
+          - bash
+          - /entry/coordinator_entrypoint
+        readinessProbe:
+          exec:
+            command:
+            - /entry/nodes_healthcheck
+          initialDelaySeconds: 5
+          periodSeconds: 30
+        livenessProbe:
+          exec:
+            command:
+            - /entry/pg_healthcheck
+          initialDelaySeconds: 5
+          periodSeconds: 30
+        resources:
+{{- if $config_col.resources }}
+{{ toYaml $config_col.resources | indent 10 }}
+{{- end }}
+        envFrom:
+        - configMapRef:
+            name: {{$app_name}}-envs
+        env:
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: POD_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+          - name: NODE_TYPE
+            value: coordinator
+        volumeMounts:
+          - name: {{$app_name}}-scripts
+            mountPath: /entry
+          - name: {{$app_name}}-cfg
+            mountPath: /config
+          - name: datastore
+            mountPath: {{ .Values.homedir }}/storage
+{{- if $config_col.volumeMounts }}
+{{ toYaml $config_col.volumeMounts | indent 10 }}
+{{- end }}
+{{- if $config_col.injectMainContainerYaml }}
+{{ toYaml $config_col.injectMainContainerYaml | indent 8 }}
+{{- end }}
+{{- if $config_col.addContainers }}
+{{ toYaml $config_col.addContainers | indent 6 }}
+{{- end }}  
+      volumes:
+{{- if $config_col.storageResources }}{{- else }}
+        - name: datastore
+          emptyDir: {}
+{{- end }}
+        - name: {{$app_name}}-scripts
+          configMap:
+            name: {{$app_name}}-scripts
+            defaultMode: 0777
+            volumes:
+        - name: {{$app_name}}-cfg
+          configMap:
+            name: {{$app_name}}-cfg
+            defaultMode: 0777
+{{- if $config_col.volumes }}
+{{ toYaml $config_col.volumes | indent 8 }}
+{{- end }}
+      

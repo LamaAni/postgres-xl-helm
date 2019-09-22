@@ -1,0 +1,98 @@
+# Default values for citus.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+image: "pavouk0/postgres-xl:XL_10_R1_1-6-g68c378f-4-g7a65119"
+# the home directory depends on the image and will determine teh 
+# data storeage location. the use posgtres must have access to this directory.
+homedir: "/var/lib/postgresql"
+
+# This is the env set that appends to all pods.
+# will not affect the db configuration.
+envs:
+# The env set that appends to all pods.
+# may affect the db configuration.
+overrideEnvs:
+
+# general config.
+config:
+  log_level: warning
+  # append to the global config file.
+  append:
+
+# add extra labels to all pods.
+extraLabels:
+
+managers_port: 6666
+postgres_port: 5432
+
+gateway_manager:
+  resources:
+    limits:
+      memory: "2Gi"
+      cpu: "2"
+  storageResources:
+    requests:
+      storage: 100Mi
+  # addons
+  addContainers:
+  volumes:
+  volumeMounts:
+  # overrides
+  injectMainContainerYaml:
+  injectDepYaml:
+  injectSTSyaml:
+
+proxies:
+  enabled: true
+  count: 2
+  thread_count: 3
+  resources:
+    limits:
+      memory: "1Gi"
+      cpu: "2"
+  # addons
+  addContainers:
+  volumes:
+  volumeMounts:
+  # overrides
+  injectMainContainerYaml:
+  injectSpecYaml:
+  injectSTSyaml:
+
+coordinators:
+  count: 3
+  resources:
+    limits:
+      memory: "2Gi"
+      cpu: "1"
+  storageResources:
+    requests:
+      storage: 100Mi
+  # addons
+  addContainers:
+  volumes:
+  volumeMounts:
+  # overrides
+  injectMainContainerYaml:
+  injectSpecYaml:
+  injectSTSyaml:
+
+datanodes:
+  count: 8
+  resources:
+    limits:
+      memory: "2Gi"
+      cpu: "1"
+  storageResources:
+    requests:
+      storage: 1Gi
+  # addons
+  addContainers:
+  volumes:
+  volumeMounts:
+  addVolumeClaims:
+  # overrides
+  injectMainContainerYaml:
+  injectSpecYaml:
+  injectSTSyaml:
