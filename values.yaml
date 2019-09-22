@@ -31,9 +31,10 @@ gateway_manager:
     limits:
       memory: "2Gi"
       cpu: "2"
-  storageResources:
-    requests:
-      storage: 100Mi
+  pvc:
+    resources:
+      requests:
+        storage: 100Mi
   # addons
   addContainers:
   volumes:
@@ -45,7 +46,7 @@ gateway_manager:
 
 proxies:
   enabled: true
-  count: 2
+  count: 1
   thread_count: 3
   resources:
     limits:
@@ -61,14 +62,15 @@ proxies:
   injectSTSyaml:
 
 coordinators:
-  count: 3
+  count: 1
   resources:
     limits:
       memory: "2Gi"
       cpu: "1"
-  storageResources:
-    requests:
-      storage: 100Mi
+  pvc:
+    resources:
+      requests:
+        storage: 100Mi
   # addons
   addContainers:
   volumes:
@@ -79,14 +81,15 @@ coordinators:
   injectSTSyaml:
 
 datanodes:
-  count: 8
+  count: 1
   resources:
     limits:
       memory: "2Gi"
       cpu: "1"
-  storageResources:
-    requests:
-      storage: 1Gi
+  pvc:
+    resources:
+      requests:
+        storage: 1Gi
   # addons
   addContainers:
   volumes:

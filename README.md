@@ -2,6 +2,12 @@
 
 [Postgres-XL](https://www.postgres-xl.org/) is an all-purpose fully ACID open source multi node scalable SQL database solution, based on [PostgreSQL](https://www.postgresql.org/).
 
+This chart is based upon the wonderful docker postgres-xl docker image here: https://github.com/pavouk-0/postgres-xl-docker
+
+### BETA
+
+This chart is in beta. Any contributors welcome. 
+
 # Components overview
 
 SEE: https://www.postgres-xl.org/documentation/xc-overview-components.html
@@ -12,6 +18,8 @@ SEE: https://www.postgres-xl.org/documentation/xc-overview-components.html
 1. Gateway Proxy (optional) - NOT YET IMPLEMENTED. 
 
 # Chart values
+
+
 
 # backup and restore
 

@@ -41,13 +41,13 @@ spec:
   replicas: {{ .Values.datanodes.count }}
   podManagementPolicy: Parallel
   volumeClaimTemplates:
-{{- if $config_col.storageResources }}
+{{- if $config_col.pvc }}
     - metadata:
         name: datastore
       spec:
         accessModes: [ "ReadWriteOnce" ]
         resources:
-{{ toYaml $config_col.storageResources | indent 10 }}
+{{ toYaml $config_col.pvc | indent 8 }}
 {{- end }}
 {{- if $config_col.addVolumeClaims }}
 {{ toYaml $config_col.addVolumeClaims | indent 4 }}
@@ -125,7 +125,7 @@ spec:
 {{ toYaml $config_col.addContainers | indent 6 }}
 {{- end }}
       volumes:
-{{- if $config_col.storageResources }}{{- else }}
+{{- if $config_col.pvc }}{{- else }}
         - name: datastore
           emptyDir: {}
 {{- end }}
