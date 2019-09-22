@@ -2,7 +2,7 @@
 
 [Postgres-XL](https://www.postgres-xl.org/) is an all-purpose fully ACID open source multi node scalable SQL database solution, based on [PostgreSQL](https://www.postgresql.org/).
 
-This chart is based upon the wonderful docker postgres-xl docker image here: https://github.com/pavouk-0/postgres-xl-docker
+This chart is based upon the wonderful docker postgres-xl image here: https://github.com/pavouk-0/postgres-xl-docker
 
 ### BETA
 
