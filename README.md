@@ -23,7 +23,7 @@ SEE: https://www.postgres-xl.org/documentation/xc-overview-components.html
 
 # backup and restore
 
-In order to keep to kubernetes principles, this helm chart allows to specify the persistent volume claim class for the workers and nodes. This data will persist between restarts. The persistent volumes created will be prefixed by `datastore-`
+In order to keep to kubernetes principles, this helm chart allows to specify the persistent volume claim class for the workers, coordinators and gm. This data will persist between restarts. The persistent volumes created will be prefixed by `datastore-`
 
 In the most general, in order to make a copy of the database one must copy all the data of each and every coordinator and data nods. This means that, when relaying on this type of persistence one must:
 
@@ -38,7 +38,7 @@ In the most general, in order to make a copy of the database one must copy all t
 
 # health check and status
 
-For the current chart, a pod will be considered healthy if it can pass,
+For the current beta phase, a pod will be considered healthy if it can pass,
 1. pg_isready.
 2. Connect to the gtm, datanodes (all), coordinators (all).
 
@@ -50,9 +50,7 @@ Benchmarks:
 1. https://www.2ndquadrant.com/en/blog/postgres-xl-scalability-for-loading-data/
 1. https://www.2ndquadrant.com/en/blog/benchmarking-postgres-xl/
 
-Pros:
-1. Its a distributed implementation of PostgresSQL, and is fully saleable for large datasets.
-1. Can distribute the tables between various worker nodes for faster processing, where some of the distribution methods are automatic (ROUNDROBIN, By PrimaryKey, REPLICATION)
+# Caveats
 
-Cons:
-1. The total number of nodes, after adding data to the 
+The data in the DB will presist only when all datanodes, coordinators and gm disks are safely restored. This helm 
+chart dose not deal with partial restores.
