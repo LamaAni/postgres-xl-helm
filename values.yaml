@@ -42,7 +42,7 @@ gateway_manager:
   # overrides
   injectMainContainerYaml:
   injectDepYaml:
-  injectSTSyaml:
+  injectSTSYaml:
 
 proxies:
   enabled: true
@@ -59,7 +59,7 @@ proxies:
   # overrides
   injectMainContainerYaml:
   injectSpecYaml:
-  injectSTSyaml:
+  injectSTSYaml:
 
 coordinators:
   count: 1
@@ -78,7 +78,7 @@ coordinators:
   # overrides
   injectMainContainerYaml:
   injectSpecYaml:
-  injectSTSyaml:
+  injectSTSYaml:
 
 datanodes:
   count: 1
@@ -98,4 +98,4 @@ datanodes:
   # overrides
   injectMainContainerYaml:
   injectSpecYaml:
-  injectSTSyaml:
+  injectSTSYaml:

@@ -59,7 +59,7 @@ name | description
 --- | ---
 [STS].injectMainContainerYaml | inject yaml into the main container.
 [STS].injectSpecYaml | inject yaml into the template spec.
-[STS].injectSTSyaml | inject yaml into the main STS spec.
+[STS].injectSTSYaml | inject yaml into the main STS spec.
 
 # backup and restore
 
