@@ -51,7 +51,7 @@ proxies:
   resources:
     limits:
       memory: "1Gi"
-      cpu: "2"
+      cpu: "1"
   # addons
   addContainers:
   volumes:
@@ -65,7 +65,7 @@ coordinators:
   count: 1
   resources:
     limits:
-      memory: "2Gi"
+      memory: "1Gi"
       cpu: "1"
   pvc:
     resources:
@@ -84,7 +84,7 @@ datanodes:
   count: 1
   resources:
     limits:
-      memory: "2Gi"
+      memory: "1Gi"
       cpu: "1"
   pvc:
     resources:
