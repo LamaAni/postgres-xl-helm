@@ -31,9 +31,6 @@ gateway_manager:
       memory: "2Gi"
       cpu: "2"
   pvc:
-    resources:
-      requests:
-        storage: 100Mi
   # addons
   addContainers:
   volumes:
@@ -67,9 +64,6 @@ coordinators:
       memory: "1Gi"
       cpu: "1"
   pvc:
-    resources:
-      requests:
-        storage: 100Mi
   # addons
   addContainers:
   volumes:
@@ -86,9 +80,6 @@ datanodes:
       memory: "1Gi"
       cpu: "1"
   pvc:
-    resources:
-      requests:
-        storage: 1Gi
   # addons
   addContainers:
   volumes:
