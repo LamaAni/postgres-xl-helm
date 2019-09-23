@@ -68,11 +68,11 @@ name | description
 
 # Persistence
 
-This implementation in this chart relies on StatefulSets to maintain data persistence between recoveries and restarts.
+The implementation in this chart relies on StatefulSets to maintain data persistence between recoveries and restarts.
 To do so, one must define the `pvc` argument in the values. If you do not define the `pvc` argument, the 
 data `will be lost` on any case of restart/recover/fail.
 
-To define a persistent database you must define all three `pvc`s for each of the stateful nodes,
+To define a persistent database you must define all three `pvc`s for each of the stateful sets,
 (below are recommended test values, where x is the size of each datanode)
 ```yaml
 datanodes.pvc:
