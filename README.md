@@ -4,6 +4,9 @@
 
 This chart is based upon the wonderful docker postgres-xl image here: https://github.com/pavouk-0/postgres-xl-docker
 
+#### Important note
+If using this chart as a database, please make sure you read the sections about persistence, backup and restore. 
+
 ### BETA
 
 This chart is in beta. Any contributors welcome. 
@@ -20,6 +23,8 @@ SEE: https://www.postgres-xl.org/documentation/xc-overview-components.html
 # Chart values
 
 [STS] = `datanodes` or `coordinators` or `proxies` or `gateway_manager`
+
+Example: datanodes.count = 32
 
 ### Global values
 
@@ -61,9 +66,39 @@ name | description
 [STS].injectSpecYaml | inject yaml into the template spec.
 [STS].injectSTSYaml | inject yaml into the main STS spec.
 
-# backup and restore
+# Persistence
+
+This implementation in this chart relies on StatefulSets to maintain data persistence between recoveries and restarts.
+To do so, one must define the `pvc` argument in the values. If you do not define the `pvc` argument, the 
+data `will be lost` on any case of restart/recover/fail.
+
+To define a persistent database you must define all three `pvc`s for each of the stateful nodes,
+(below are recommended test values, where x is the size of each datanode)
+```yaml
+datanodes.pvc:
+  resources:
+      requests:
+        storage: [x]Gi
+gateway_manager.pvc:
+  resources:
+      requests:
+        storage: 100Mi
+coordinators.pvc:
+  resources:
+      requests:
+        storage: 100Mi
+```
+
+Once these are defined, the DB will recover when any of datanode/coordinator/proxy/gm are restarted.
+
+See more about persistence in Stateful Sets [here](https://kubernetes.io/docs/tutorials/stateful-application/basic-stateful-set/)
+and [here](https://kubernetes.io/docs/concepts/storage/persistent-volumes/).
+
+# Backup and restore
 
 In order to keep to kubernetes principles, this helm chart allows to specify the persistent volume claim class for the workers, coordinators and gm. This data will persist between restarts. The persistent volumes created will be prefixed by `datastore-`
+
+Information about StorageClasses can be found [here](https://kubernetes.io/docs/concepts/storage/volumes/)
 
 In the most general, in order to make a copy of the database one must copy all the data of each and every coordinator and data nods. This means that, when relaying on this type of persistence one must:
 
