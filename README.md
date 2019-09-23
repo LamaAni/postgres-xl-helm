@@ -20,6 +20,11 @@ SEE: https://www.postgres-xl.org/documentation/xc-overview-components.html
 1. Datanode - Multi-pod StatefulSet - All table data is stored here. A table may be replicated or distributed between datanodes. Since query work is done on the datanodes, the scale and capacity of the db will be determine by the number of datanodes. The data stored in the coordinator is part of the DB data and should be backed up.
 1. Gateway Proxy (optional) - A helper gateway manager. Gtm proxy groups connections and interactions between gtm and other Postgres-XL components to reduce both the number of interactions and the size of messages. Performance tests have shown greater performance with high concurrency workloads as a result.
 
+To connect to the database, please connect to the db main service (which is the coordinator service), example:
+```shell
+kubectl port-forward svc/[release-name]-postgres-xl-svc
+```
+
 # Chart values
 
 [STS] = `datanodes` or `coordinators` or `proxies` or `gateway_manager`
