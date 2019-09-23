@@ -15,9 +15,9 @@ This chart is in beta. Any contributors welcome.
 
 SEE: https://www.postgres-xl.org/documentation/xc-overview-components.html
 
-1. [ Gateway manager (GTM) ](https://www.postgres-xl.org/documentation/app-gtm.html) - Single pod Deployment - provides transaction management for the entire cluster.
-1. Coordinator - Multi-pod StatefulSet - Database external connections entry point (i.e. where I connect my client to). They provide transparent concurrency and integrity of transactions globally. Applications can choose any Coordinator to connect to, they work together. Any Coordinator provides the same view of the database, with the same data, as if it was one PostgreSQL database. The data stored in the coordinator is part of the DB data and should be backed up.
-1. Datanode - Multi-pod StatefulSet - All table data is stored here. A table may be replicated or distributed between datanodes. Since query work is done on the datanodes, the scale and capacity of the db will be determine by the number of datanodes.
+1. [ Gateway manager (GTM) ](https://www.postgres-xl.org/documentation/app-gtm.html) - Single pod StatefulSet - provides transaction management for the entire cluster. The data stored in the GTM is part of the database persistence and should be backed up.
+1. Coordinator - Multi-pod StatefulSet - Database external connections entry point (i.e. where I connect my client to). These pods provide transparent concurrency and integrity of transactions globally. Applications can choose any Coordinator to connect to, they work together. Any Coordinator provides the same view of the database, with the same data, as if it was one PostgreSQL database. The data stored in the coordinator is part of the DB data and should be backed up.
+1. Datanode - Multi-pod StatefulSet - All table data is stored here. A table may be replicated or distributed between datanodes. Since query work is done on the datanodes, the scale and capacity of the db will be determine by the number of datanodes. The data stored in the coordinator is part of the DB data and should be backed up.
 1. Gateway Proxy (optional) - A helper gateway manager. Gtm proxy groups connections and interactions between gtm and other Postgres-XL components to reduce both the number of interactions and the size of messages. Performance tests have shown greater performance with high concurrency workloads as a result.
 
 # Chart values
