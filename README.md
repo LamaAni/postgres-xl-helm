@@ -132,7 +132,7 @@ Benchmarks:
 
 # Caveats
 
-The data in the DB will presist only when all datanodes, coordinators and gm disks are safely restored. This helm 
+The data in the DB will persist only when all datanodes, coordinators and gm disks are safely restored. This helm 
 chart dose not deal with partial restores.
 
 # Licence
