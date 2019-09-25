@@ -134,3 +134,9 @@ Benchmarks:
 
 The data in the DB will presist only when all datanodes, coordinators and gm disks are safely restored. This helm 
 chart dose not deal with partial restores.
+
+# Licence
+
+Copyright ©
+`Zav Shotan` and other [contributors](https://github.com/LamaAni/PGXL-HELM/graphs/contributors).
+It is free software, released under the MIT licence, and may be redistributed under the terms specified in `LICENSE`.
