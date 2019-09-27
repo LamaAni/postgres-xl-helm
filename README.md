@@ -120,7 +120,7 @@ In the most general, in order to make a copy of the database one must copy all t
 1. GCS
 2. AWS
 
-# health check and status
+# Health check and status
 
 For the current beta phase, a pod will be considered healthy if it can pass,
 1. pg_isready.
