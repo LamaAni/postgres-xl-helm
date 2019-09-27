@@ -1,0 +1,8 @@
+datanodes:
+  count: 4
+
+coordinators:
+  count: 2
+
+proxies:
+  count: 2

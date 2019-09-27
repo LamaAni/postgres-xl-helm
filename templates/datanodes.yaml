@@ -13,10 +13,10 @@ metadata:
 {{ toYaml .Values.extraLabels | indent 4 }}
 {{- end }}
 spec:
+  clusterIP: None
   ports:
   - port: {{ .Values.postgres_port }}
     name: pg
-  clusterIP: None
   selector:
     app: {{ $app_name }}
     chart: {{ $chart_name }}

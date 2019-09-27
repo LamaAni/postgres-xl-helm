@@ -14,12 +14,12 @@ metadata:
 {{ toYaml .Values.extraLabels | indent 4 }}
 {{- end }}
 spec:
+  type: LoadBalancer
   ports:
   - port: {{ .Values.managers_port }}
     protocol: TCP
     targetPort: {{ .Values.managers_port }}
     name: gtm
-  clusterIP: None
   selector:
     app: {{ $app_name }}
     chart: {{ $chart_name }}
