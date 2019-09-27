@@ -19,6 +19,12 @@ config:
   # append to the global config file.
   append:
 
+# the coordinators external service.
+service:
+  enabled: true
+  port: 5432
+  type: LoadBalancer
+
 # add extra labels to all pods.
 extraLabels:
 

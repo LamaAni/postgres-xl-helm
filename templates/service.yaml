@@ -1,0 +1,35 @@
+{{ $app_name := include "global.app_name" . -}}
+{{ $chart_name := include "global.chart_full_name" . -}}
+{{- $config_col := .Values.service -}}
+{{- if $config_col.enabled -}}
+
+# external service.
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $app_name }}-svc
+  labels:
+    app: {{ $app_name }}
+    chart: {{ $chart_name }}
+    type: external
+{{- if .Values.extraLabels }}
+{{ toYaml .Values.extraLabels | indent 4 }}
+{{- end }}
+spec:
+  type: {{ $config_col.type }}
+  ports:
+  - port: {{ $config_col.port }}
+    targetPort: {{ .Values.postgres_port }}
+    name: pg
+  selector:
+    app: {{ $app_name }}
+    chart: {{ $chart_name }}
+    type: coordinator
+{{- if .Values.extraLabels }}
+{{ toYaml .Values.extraLabels | indent 4 }}
+{{- end }}
+{{- if $config_col.injectSpecYaml }}
+{{ toYaml $config_col.injectSpecYaml | indent 4 }}
+{{- end }}
+
+{{- end -}}
