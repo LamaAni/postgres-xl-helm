@@ -1,0 +1,21 @@
+gateway_manager:
+  pvc:
+    resources:
+        requests:
+          storage: 100Mi
+
+datanodes:
+  count: 4
+  pvc:
+    resources:
+        requests:
+          storage: "40Gi"
+
+coordinators:
+  count: 2
+  pvc:
+    resources:
+        requests:
+          storage: 100Mi
+proxies:
+  count: 2

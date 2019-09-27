@@ -20,7 +20,6 @@ spec:
     protocol: TCP
     targetPort: {{ .Values.managers_port }}
     name: gtm
-  clusterIP: None
   selector:
     app: {{ $app_name }}
     chart: {{ $chart_name }}

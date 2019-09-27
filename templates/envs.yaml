@@ -35,7 +35,7 @@ data:
   DATANODE_BASENAME: "{{ $app_name }}-dn"
   COORDINATOR_BASENAME: "{{ $app_name }}-crd"
   DATANODE_SERVICE: {{ $app_name }}-svc-dn
-  COORDINATOR_SERVICE: {{ $app_name }}-svc
+  COORDINATOR_SERVICE: {{ $app_name }}-svc-crd
   # Added envs, these may affect pod operation.
   {{- if .Values.overrideEnvs }}
   {{- toYaml .Values.overrideEnvs | indent 2}}}
