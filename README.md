@@ -39,6 +39,9 @@ image | the image to use | pavouk0/postgres-xl:XL_10_R1_1-6-g68c378f-4-g7a65119
 envs | Additional envs to add to all pods | [null]
 managers_port | the port to use in the gateway manager or proxies | 6666
 postgres_port | the internal and external postgres port | 5432
+service.port | the external service port | 5432
+service.enabled | if true enables the external load balancer service | true
+service.type | The external service type | LoadBalancer
 
 ### For any stateful set
 
@@ -62,6 +65,7 @@ name | description | default value
 --- | --- | ---
 homedir | the image home directory | /var/lib/postgresql 
 overrideEnvs | a set of envs which are added after the chart core envs, and allows to override the chart. | [null]
+service.injectSpecYaml | injects yaml into the external service | [null]
 
 #### For any stateful set
 

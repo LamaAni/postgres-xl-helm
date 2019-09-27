@@ -29,7 +29,7 @@ spec:
 {{ toYaml .Values.extraLabels | indent 4 }}
 {{- end }}
 {{- if $config_col.injectSpecYaml }}
-{{ toYaml $config_col.injectSpecYaml | indent 4 }}
+{{ toYaml $config_col.injectSpecYaml | indent 2 }}
 {{- end }}
 
 {{- end -}}
