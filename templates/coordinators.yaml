@@ -13,6 +13,7 @@ metadata:
 {{ toYaml .Values.extraLabels | indent 4 }}
 {{- end }}
 spec:
+  type: LoadBalancer
   ports:
   - port: {{ .Values.postgres_port }}
     name: pg

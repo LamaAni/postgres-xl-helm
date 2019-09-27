@@ -14,6 +14,7 @@ metadata:
 {{ toYaml .Values.extraLabels | indent 4 }}
 {{- end }}
 spec:
+  type: LoadBalancer
   ports:
   - port: {{ .Values.managers_port }}
     protocol: TCP
