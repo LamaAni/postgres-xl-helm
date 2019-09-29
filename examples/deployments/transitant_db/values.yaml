@@ -1,8 +1,7 @@
 datanodes:
-  count: 4
-
+  count: 4  
 coordinators:
   count: 2
-
 proxies:
-  count: 2
+  enabled: true
+  count: 1

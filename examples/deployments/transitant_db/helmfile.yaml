@@ -1,15 +1,15 @@
-repositories:
-  - name: yourorg
-    url: https://yourorg.example.com/charts
-
+# generate a transiant postgres-xl db. This db will 
+# NOT be able to withstand restarts.
 releases:
-  - name: dbmigrator
-    labels:
-      job: dbmigrator
-    chart: ./dbmigrator
-    # DB host, port, and connection opts for the environment
+  - name: transient
+    # Use of a specific relaease. 
+    # chart: https://github.com/LamaAni/PGXL-HELM/archive/0.5.0.tar.gz
+    # Chart in directory
+    chart: ../../../
     values:
-    - "deploy/environments/{{ env "RAILS_ENV" }}/values.yaml"
-    # DB username and password encrypted with helm-secrets(mozilla/sops)
-    secrets:
-    - "deploy/environments/{{ env "RAILS_ENV" }}/secrets.yaml"
+      - ./values.yaml
+      # can also added inline, example:
+      # - datanodes:
+      #     count: 4  
+      #   coordinators:
+      #     count: 2
