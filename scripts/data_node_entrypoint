@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# Datanode initialization script
+echo "$LOGGING_PREFIX Starting postgres as datanode"
+cur_path="$(dirname ${BASH_SOURCE[0]})"
+source "$cur_path/initialize_env_dependencies" || exit $?
+
+# connecting to cluster
+source "$cur_path/configure_postgres_service_connections"
+
+# initialize the database.
+source "$cur_path/initialize_postgres_db" || exit $?
+
+# start the node register in the bg.
+"$cur_path/register_node" &
+
+# starting postgres
+postgres \
+    -D "${PGDATA}" \
+    -h "${PG_HOST}" \
+    -p "${PG_PORT}" \
+    -c gtm_host="${PG_GTM_HOST}" \
+    -c gtm_port="${PG_GTM_PORT}" \
+    --datanode

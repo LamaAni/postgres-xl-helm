@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+# Initialize the postgres database.
+cur_path="$(dirname ${BASH_SOURCE[0]})"
+echo "$LOGGING_PREFIX Initializing database on node $PG_NODE"
+
+if [ "$RESET_DB" == "true" ] && [ -d "${PGDATA}" ]; then
+  rm -R "${PGDATA}"
+fi
+
+if [ ! -f "${PGDATA}/postgres.conf" ]; then
+  echo "$LOGGING_PREFIX Database configuration not found, calling initdb"
+  initdb \
+    -D "${PGDATA}" \
+    --nodename="${PG_NODE}"
+
+  source "$cur_path/initialize_networks"
+  cat /config/pg_config_append >> "${PGDATA}/postgres.conf"
+  cat /config/config_append >> "${PGDATA}/postgres.conf"
+else
+  echo "$LOGGING_PREFIX Database configuration found, init skipped."
+fi
+
+# required for postgrs permissions. 
+# the loaded values are actually set by kuberntes. :(
+echo "$LOGGING_PREFIX Set data folder permissions 0700"
+chmod -R 0700 ${PGDATA}
+
+configure_postgres_service_connections: |
+#!/usr/bin/env bash
+cur_path="$(dirname ${BASH_SOURCE[0]})"
+
+# check for proxy.
+if [ "$PROXY_ENABLED" = "true" ]; then
+  export PG_GTM_HOST="$PROXY_SERVICE"
+  echo "$LOGGING_PREFIX looking for GTM proxy host @ $PG_GTM_HOST..."
+else 
+  echo "$LOGGING_PREFIX looking for GTM host @ $PG_GTM_HOST..."
+fi
+
+# waiting for GTM.
+"$cur_path/wait_for_connection" "$PG_GTM_HOST" "$PG_GTM_PORT" || exit $?

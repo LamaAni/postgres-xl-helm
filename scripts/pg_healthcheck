@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+pg_isready || exit 2

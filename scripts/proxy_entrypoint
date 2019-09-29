@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# proxy startup bash script
+echo "$LOGGING_PREFIX Starting transaction manager proxy"
+cur_path="$(dirname ${BASH_SOURCE[0]})"
+source "$cur_path/initialize_env_dependencies"
+
+# initialize the gtm_proxy manager
+initgtm -D "${PGDATA}" -Z gtm_proxy
+
+# config
+cat /config/gtm_config_append >> "${PGDATA}/gtm_proxy.conf"
+cat /config/config_append >> "${PGDATA}/gtm_proxy.conf"
+source "$cur_path/initialize_networks"
+
+# start the proxy.
+PROXY_ID="$POD_CLUSTER_INDEX"
+PROXY_HOST="$POD_IP"
+echo "$LOGGING_PREFIX looking for GTM..."
+"$cur_path/wait_for_connection" "$PG_GTM_HOST" "$PG_GTM_PORT"
+echo "$LOGGING_PREFIX Starting proxy $PROXY_ID @ $PROXY_HOST:$PG_GTM_PORT -> $PG_GTM_HOST:$PG_GTM_PORT .."
+gtm_proxy \
+  -D "${PGDATA}" \
+  -h "${PROXY_HOST}" \
+  -p "${PG_GTM_PORT}" \
+  -i "${PROXY_ID}" \
+  -s "${PG_GTM_HOST}" \
+  -t "${PG_GTM_PORT}" \
+  -n "${PROXY_THREAD_COUNT}" \
+  -l /dev/stdout
