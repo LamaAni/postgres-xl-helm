@@ -31,7 +31,7 @@ extraLabels:
 managers_port: 6666
 postgres_port: 5432
 
-gateway_manager:
+gtm:
   resources:
     limits:
       memory: "2Gi"

@@ -1,4 +1,4 @@
-gateway_manager:
+gtm:
   pvc:
     resources:
         requests:

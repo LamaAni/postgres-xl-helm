@@ -1,6 +1,6 @@
 {{ $app_name := include "global.app_name" . -}}
 {{ $chart_name := include "global.chart_full_name" . -}}
-{{ $config_col := .Values.gateway_manager -}}
+{{ $config_col := .Values.gtm -}}
 apiVersion: v1
 kind: Service
 metadata:
@@ -8,7 +8,7 @@ metadata:
   labels:
     app: {{ $app_name }}
     chart: {{ $chart_name }}
-    type: gateway_manager
+    type: gtm
 {{- if .Values.extraLabels }}
 {{ toYaml .Values.extraLabels | indent 4 }}
 {{- end }}
@@ -22,7 +22,7 @@ spec:
   selector:
     app: {{ $app_name }}
     chart: {{ $chart_name }}
-    type: gateway_manager
+    type: gtm
 {{- if .Values.extraLabels }}
 {{ toYaml .Values.extraLabels | indent 4 }}
 {{- end }}
@@ -34,7 +34,7 @@ metadata:
   labels:
     app: {{ $app_name }}
     chart: {{ $chart_name }}
-    type: gateway_manager
+    type: gtm
 {{- if .Values.extraLabels }}
 {{ toYaml .Values.extraLabels | indent 4 }}
 {{- end }}
@@ -57,7 +57,7 @@ spec:
     matchLabels:
       app: {{ $app_name }}
       chart: {{ $chart_name }}
-      type: gateway_manager
+      type: gtm
 {{- if .Values.extraLabels }}
 {{ toYaml .Values.extraLabels | indent 6 }}
 {{- end }}
@@ -69,7 +69,7 @@ spec:
       labels:
         app: {{ $app_name }}
         chart: {{ $chart_name }}
-        type: gateway_manager
+        type: gtm
 {{- if .Values.extraLabels }}
 {{ toYaml .Values.extraLabels | indent 8 }}
 {{- end }}
@@ -84,7 +84,7 @@ spec:
         image: {{ .Values.image }}
         command:
           - bash
-          - /entry/gateway_manager_entrypoint
+          - /entry/gtm_entrypoint
         envFrom:
         - configMapRef:
             name: {{$app_name}}-envs
