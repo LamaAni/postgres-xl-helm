@@ -3,14 +3,12 @@ gtm:
     resources:
         requests:
           storage: 100Mi
-
 datanodes:
   count: 4
   pvc:
     resources:
         requests:
-          storage: "40Gi"
-
+          storage: "4Gi"
 coordinators:
   count: 2
   pvc:
@@ -18,4 +16,5 @@ coordinators:
         requests:
           storage: 100Mi
 proxies:
-  count: 2
+  count: 1
+  enabled: true
