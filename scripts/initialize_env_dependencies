@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# Initializes the env variables in the pod,
+# depending on pod type.
+POD_INDEX=$(echo "$POD_NAME" | grep -Eo "[0-9]+\s*$")
+export POD_INDEX
+
+if [ -z "$PG_NODE" ]; then
+  case "$NODE_TYPE" in 
+    datanode)
+      PG_NODE="DN_${POD_INDEX}"
+      POD_CLUSTER_INDEX=$((POD_INDEX+COORDINATOR_COUNT+PROXY_COUNT+1))
+    ;;
+    coordinator)
+      PG_NODE="CN_${POD_INDEX}"
+      POD_CLUSTER_INDEX=$((POD_INDEX+PROXY_COUNT+1))
+    ;;
+    proxy)
+      PG_NODE="PXY_${POD_INDEX}"
+      POD_CLUSTER_INDEX=$((POD_INDEX+1))
+    ;;
+    *)
+      if [ -n "$NODE_TYPE" ]; then
+        echo "$LOGGING_PREFIX Cluster node cannot be defined for type $NODE_TYPE, skipping"
+      fi
+    ;;
+  esac
+fi
+
+export POD_CLUSTER_INDEX

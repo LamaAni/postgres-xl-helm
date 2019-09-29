@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+# check all datanodes are connected.
+for i in $(seq 0 $DATANODE_COUNT); do 
+  if [ $i -eq $DATANODE_COUNT ]; then break; fi
+  node_full_name="${DATANODE_BASENAME}-${i}"
+  node_host="${node_full_name}.${DATANODE_SERVICE}"
+
+  nc -zv "$node_host" $PG_PORT &> /dev/null
+  if [ $? -ne 0 ]; then
+    echo "$LOGGING_PREFIX Cluster not ready, failed to connect to datanode at $node_host" >> /dev/stderr
+    exit 1
+  fi
+done

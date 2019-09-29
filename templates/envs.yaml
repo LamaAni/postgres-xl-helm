@@ -14,6 +14,10 @@ data:
   LOGGING_PREFIX: "PGXL:HELM:"
   RESET_DB: "false"
 
+  # postgrs envs
+  PGUSER: postgres
+  PGPASSWORD: lama
+
   # Added envs. These will not affect the db operation.
   {{- if .Values.envs }}
   {{- toYaml .Values.envs | indent 2}}}

@@ -1,0 +1,75 @@
+#!/usr/bin/env bash
+# Script to register the nodes in postgres
+cur_path="$(dirname ${BASH_SOURCE[0]})"
+source "$cur_path/initialize_env_dependencies"
+
+while true; do
+  pg_isready &> /dev/null 
+  if [ $? -eq 0 ]; then
+    break
+  else 
+    echo "$LOGGING_PREFIX Waiting for database to be ready before starting cluster register"
+    sleep $PORT_WAIT_INTERVAL
+  fi
+done
+
+echo "$LOGGING_PREFIX Registering cluster nodes on $POD_NAME.."
+
+function register_node(){
+  local type=$1
+  local idx=$2
+  case "$type" in 
+    datanode)
+      node_full_name="${DATANODE_BASENAME}-${idx}"
+      node_host="${node_full_name}.${DATANODE_SERVICE}"
+      node_name="DN_$i"
+    ;;
+    coordinator)
+      node_full_name="${COORDINATOR_BASENAME}-${idx}"
+      node_host="${node_full_name}.${COORDINATOR_SERVICE}"
+      node_name="CN_$i"
+    ;;
+  esac
+
+  local cmd="CREATE"
+  local host_ip="$POD_IP"
+  if [ "$node_full_name" = "$POD_NAME" ]; then
+    cmd="ALTER"
+    echo "$LOGGING_PREFIX Registering self.."
+  else
+    while true; do
+      host_ip=$(getent hosts "$node_host" | awk '{ print $1 }')
+      if [ -z "$host_ip" ]; then
+        echo "$LOGGING_PREFIX Waiting for host to be ready @ $node_host ..."
+        sleep $PORT_WAIT_INTERVAL
+      else
+        break
+      fi
+    done
+  fi
+  echo "$LOGGING_PREFIX Resovled $node_host -> $host_ip, registering node on local as $type:"
+
+  local sql_script="$cmd NODE $node_name WITH (TYPE = '$type', HOST = '$node_host', PORT = $PG_PORT);"
+  echo "$LOGGING_PREFIX $sql_script";
+  psql -c "$sql_script" | xargs -L 1 echo "$LOGGING_PREFIX"
+}
+
+# registering datanodes.
+for i in $(seq 0 $DATANODE_COUNT); do 
+  if [ $i -eq $DATANODE_COUNT ]; then break; fi
+  register_node datanode $i
+done
+
+for i in $(seq 0 $COORDINATOR_COUNT); do 
+  if [ $i -eq $COORDINATOR_COUNT ]; then break; fi
+  register_node coordinator $i
+done
+
+echo "$LOGGING_PREFIX Reloading pool...  "
+psql -q -c "SELECT pgxc_pool_reload();"
+echo "$LOGGING_PREFIX Registered node list:  "
+psql -q -c "SELECT * FROM pgxc_node"
+
+echo "$LOGGING_PREFIX Seeting state to active."
+echo "$(date)" >> ~/service_activation_time
+echo "$LOGGING_PREFIX Node ready."

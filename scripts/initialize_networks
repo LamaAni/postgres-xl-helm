@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# Initialize the host connection to allow all networks, 
+# since we are in kuberntes, the assumption is the current 
+# network is a trusted network.
+echo "host all all 0.0.0.0/0 trust" >> "${PGDATA}/pg_hba.conf"
+echo "$LOGGING_PREFIX Added network config to allow all"

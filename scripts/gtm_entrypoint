@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# bash script for GTM
+echo "$LOGGING_PREFIX Starting as global transaction manager (GTM)"
+
+cur_path="$(dirname ${BASH_SOURCE[0]})"
+source "$cur_path/initialize_env_dependencies"
+
+# initialize the gtm manager
+if [ "$RESET_DB" == "true" ] && [ -d "${PGDATA}" ]; then
+  rm -R "${PGDATA}"
+fi
+
+if [ ! -f "${PGDATA}/gtm.conf" ]; then
+  echo "$LOGGING_PREFIX GTM configuration not found, calling initdb"
+  initgtm -D "${PGDATA}" -Z gtm
+
+  cat /config/gtm_config_append >> "${PGDATA}/gtm.conf"
+  cat /config/config_append >> "${PGDATA}/gtm.conf"
+  source "$cur_path/initialize_networks"
+else
+  echo "$LOGGING_PREFIX GTM configuration found, init skipped."
+fi
+
+# permissions
+echo "$LOGGING_PREFIX Set data folder permissions 0700"
+chmod -R 0700 ${PGDATA}
+
+# start the GTM
+gtm -D "${PGDATA}" -h "${PG_HOST}" -n "${PG_NODE}" -p "${PG_GTM_PORT}" -l /dev/stdout
