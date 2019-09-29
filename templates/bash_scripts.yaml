@@ -193,20 +193,20 @@ data:
     # check for proxy.
     if [ "$PROXY_ENABLED" = "true" ]; then
       export PG_GTM_HOST="$PROXY_SERVICE"
-      echo "$LOGGING_PREFIX looking for gateway manager proxy host @ $PG_GTM_HOST..."
+      echo "$LOGGING_PREFIX looking for GTM proxy host @ $PG_GTM_HOST..."
     else 
-      echo "$LOGGING_PREFIX looking for gateway manager host @ $PG_GTM_HOST..."
+      echo "$LOGGING_PREFIX looking for GTM host @ $PG_GTM_HOST..."
     fi
 
-    # waiting for gateway manager.
+    # waiting for GTM.
     "$cur_path/wait_for_connection" "$PG_GTM_HOST" "$PG_GTM_PORT" || exit $?
 
   ####################
   # Entrypoints
-  gateway_manager_entrypoint: |
+  gtm_entrypoint: |
     #!/usr/bin/env bash
-    # bash script for gateway manager.
-    echo "$LOGGING_PREFIX Starting gateway manager"
+    # bash script for GTM
+    echo "$LOGGING_PREFIX Starting as global transaction manager (GTM)"
 
     cur_path="$(dirname ${BASH_SOURCE[0]})"
     source "$cur_path/initialize_env_dependencies"
@@ -231,13 +231,13 @@ data:
     echo "$LOGGING_PREFIX Set data folder permissions 0700"
     chmod -R 0700 ${PGDATA}
 
-    # start the gateway manager
+    # start the GTM
     gtm -D "${PGDATA}" -h "${PG_HOST}" -n "${PG_NODE}" -p "${PG_GTM_PORT}" -l /dev/stdout
   
   proxy_entrypoint: |
     #!/usr/bin/env bash
     # proxy startup bash script
-    echo "$LOGGING_PREFIX Starting gateway manager proxy"
+    echo "$LOGGING_PREFIX Starting transaction manager proxy"
     cur_path="$(dirname ${BASH_SOURCE[0]})"
     source "$cur_path/initialize_env_dependencies"
 
@@ -252,7 +252,7 @@ data:
     # start the proxy.
     PROXY_ID="$POD_CLUSTER_INDEX"
     PROXY_HOST="$POD_IP"
-    echo "$LOGGING_PREFIX looking for gateway manager..."
+    echo "$LOGGING_PREFIX looking for GTM..."
     "$cur_path/wait_for_connection" "$PG_GTM_HOST" "$PG_GTM_PORT"
     echo "$LOGGING_PREFIX Starting proxy $PROXY_ID @ $PROXY_HOST:$PG_GTM_PORT -> $PG_GTM_HOST:$PG_GTM_PORT .."
     gtm_proxy \

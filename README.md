@@ -2,7 +2,9 @@
 
 [Postgres-XL](https://www.postgres-xl.org/) is an all-purpose fully ACID open source multi node scalable SQL database solution, based on [PostgreSQL](https://www.postgresql.org/).
 
-This chart allows for creating a multi container, multi process, distributed database using Postgres-XL. It is based upon the wonderful docker postgres-xl docker image here: https://github.com/pavouk-0/postgres-xl-docker, where you can also find a graph description of the cluster configuration.
+This chart allows for creating a multi container, multi process, distributed database using Postgres-XL. It is based upon the wonderful docker [postgres-xl-docker](https://github.com/pavouk-0/postgres-xl-docker) image.
+
+For a graph description of the connections structure see [here](https://www.2ndquadrant.com/wp-content/uploads/2019/04/Postgres-XL-Display.png.webp).
 
 #### Important note
 If using this chart as a database, please make sure you read the sections about persistence, backup and restore. 
@@ -13,12 +15,12 @@ This chart is in beta. Any contributors welcome.
 
 # Components overview
 
-SEE: https://www.postgres-xl.org/documentation/xc-overview-components.html
+See: [Postgres-XL documentation](https://www.postgres-xl.org/documentation/xc-overview-components.html)
 
-1. [ Gateway manager (GTM) ](https://www.postgres-xl.org/documentation/app-gtm.html) - Single pod StatefulSet - provides transaction management for the entire cluster. The data stored in the GTM is part of the database persistence and should be backed up.
+1. [ Global Transaction Manager (GTM) ](https://www.postgres-xl.org/documentation/app-gtm.html) - Single pod StatefulSet - provides transaction management for the entire cluster. The data stored in the GTM is part of the database persistence and should be backed up.
 1. Coordinator - Multi-pod StatefulSet - Database external connections entry point (i.e. where I connect my client to). These pods provide transparent concurrency and integrity of transactions globally. Applications can choose any Coordinator to connect to, they work together. Any Coordinator provides the same view of the database, with the same data, as if it was one PostgreSQL database. The data stored in the coordinator is part of the DB data and should be backed up.
 1. Datanode - Multi-pod StatefulSet - All table data is stored here. A table may be replicated or distributed between datanodes. Since query work is done on the datanodes, the scale and capacity of the db will be determine by the number of datanodes. The data stored in the coordinator is part of the DB data and should be backed up.
-1. Gateway Proxy (optional) - A helper gateway manager. Gtm proxy groups connections and interactions between gtm and other Postgres-XL components to reduce both the number of interactions and the size of messages. Performance tests have shown greater performance with high concurrency workloads as a result.
+1. GTM Proxy (optional) - A helper transaction manager. Gtm proxy groups connections and interactions between gtm and other Postgres-XL components to reduce both the number of interactions and the size of messages. Performance tests have shown greater performance with high concurrency workloads as a result.
 
 To connect to the database, please connect to the db main service (which is the coordinator service), example:
 ```shell
@@ -27,7 +29,7 @@ kubectl port-forward svc/[release-name]-postgres-xl-svc
 
 # Chart values
 
-[STS] = `datanodes` or `coordinators` or `proxies` or `gateway_manager`
+[STS] = `datanodes` or `coordinators` or `proxies` or `gtm`
 
 Example: datanodes.count = 32
 
@@ -37,20 +39,19 @@ name | description | default value
 --- | --- | ---
 image | the image to use | pavouk0/postgres-xl:XL_10_R1_1-6-g68c378f-4-g7a65119
 envs | Additional envs to add to all pods | [null]
-managers_port | the port to use in the gateway manager or proxies | 6666
-postgres_port | the internal and external postgres port | 5432
+managers_port | the port to use for transaction management (GTM or proxies) | 6666
+postgres_port | the internal postgres port | 5432
 service.port | the external service port | 5432
 service.enabled | if true enables the external load balancer service | true
 service.type | The external service type | LoadBalancer
 
-### For any stateful set
+### For any StatefulSet
 
 name | description | default value 
 --- | --- | ---
 [STS].count | The total number of replicas, dose not apply to gtm | 1
 [STS].resources | the main pod resources | Limits, GTM - 2Gi, 2 cpu; All others - 1Gi, 1 cpu
-[STS].resources | the main pod resources | Limits, GTM - 2Gi, 2 cpu; All others - 1Gi, 1 cpu
-[STS].pvc | The persistence volume claim for data storage. Use this value to set the internal database storage. Recommended for Coordinators and Gateway managers, 100Mi | [null]
+[STS].pvc | The persistence volume claim for data storage. Use this value to set the internal database storage. See Persistence for recommended values. | [null]
 [STS].addContainers | yaml inject to add more containers
 [STS].volumes | yaml inject to add more volumes
 [STS].volumeMounts | yaml inject to add more volume mounts
@@ -88,7 +89,7 @@ datanodes.pvc:
   resources:
       requests:
         storage: [x]Gi
-gateway_manager.pvc:
+gtm.pvc:
   resources:
       requests:
         storage: 100Mi
