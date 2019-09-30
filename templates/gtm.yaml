@@ -106,6 +106,7 @@ spec:
                 fieldPath: status.podIP
           - name: NODE_TYPE
             value: proxy
+{{- include "print_password_envs" . | indent 10 }}
         volumeMounts:
           - name: {{$app_name}}-scripts
             mountPath: /entry
