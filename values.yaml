@@ -1,35 +1,45 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
+# The pgxl image to use in all pods.
 image: "pavouk0/postgres-xl:XL_10_R1_1-6-g68c378f-4-g7a65119"
 # the home directory depends on the image and will determine teh 
 # data storeage location. the use posgtres must have access to this directory.
 homedir: "/var/lib/postgresql"
-
 # This is the env set that appends to all pods.
 # will not affect the db configuration.
 envs:
 # The env set that appends to all pods.
 # may affect the db configuration.
 overrideEnvs:
+# add extra labels to all pods.
+extraLabels:
 
 # general config.
 config:
+  # The log level to use, accepts : ERROR, WARNING, INFO, DEBUG, DEBUG (1-5)
   log_level: warning
+  # the port for managers (GTM and proxy)
+  managers_port: 6666
+  # the internal databsae port (postgres)
+  postgres_port: 5432
+  # the root user
+  postgres_user: postgres
   # append to the global config file.
   append:
+
+security:
+  # If exists will load all passwords from secrets.
+  passwords_secret_name:
+  # If passwords_secret_name exists, is the name of the secret
+  # key. Otherwise the password.
+  pg_password:
 
 # the coordinators external service.
 service:
   enabled: true
   port: 5432
   type: LoadBalancer
-
-# add extra labels to all pods.
-extraLabels:
-
-managers_port: 6666
-postgres_port: 5432
 
 gtm:
   resources:

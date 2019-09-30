@@ -39,8 +39,8 @@ name | description | default value
 --- | --- | ---
 image | the image to use | pavouk0/postgres-xl:XL_10_R1_1-6-g68c378f-4-g7a65119
 envs | Additional envs to add to all pods | [null]
-managers_port | the port to use for transaction management (GTM or proxies) | 6666
-postgres_port | the internal postgres port | 5432
+config.managers_port | the port to use for transaction management (GTM or proxies) | 6666
+config.postgres_port | the internal postgres port | 5432
 service.port | the external service port | 5432
 service.enabled | if true enables the external load balancer service | true
 service.type | The external service type | LoadBalancer

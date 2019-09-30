@@ -15,9 +15,9 @@ metadata:
 spec:
   type: LoadBalancer
   ports:
-  - port: {{ .Values.managers_port }}
+  - port: {{ .Values.config.managers_port }}
     protocol: TCP
-    targetPort: {{ .Values.managers_port }}
+    targetPort: {{ .Values.config.managers_port }}
     name: gtm
   selector:
     app: {{ $app_name }}
@@ -89,7 +89,7 @@ spec:
         - configMapRef:
             name: {{$app_name}}-envs
         ports:
-          - containerPort: {{ .Values.managers_port }}
+          - containerPort: {{ .Values.config.managers_port }}
             name: gtm
         resources:
 {{- if $config_col.resources }}
