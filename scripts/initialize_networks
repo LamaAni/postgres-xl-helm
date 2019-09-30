@@ -1,6 +1,15 @@
 #!/usr/bin/env bash
-# Initialize the host connection to allow all networks, 
-# since we are in kuberntes, the assumption is the current 
+# Initialize the host connection to allow all networks,
+# since we are in kuberntes, the assumption is the current
 # network is a trusted network.
-echo "host all all 0.0.0.0/0 trust" >> "${PGDATA}/pg_hba.conf"
-echo "$LOGGING_PREFIX Added network config to allow all"
+
+export PG_AUTH_METHOD="trust"
+if [ -n "$PGPASSWORD" ]; then
+  PG_AUTH_METHOD="md5"
+  echo "$LOGGING_PREFIX Added network config to allow password protected connections."
+else 
+  echo "$LOGGING_PREFIX WARNING: Superuser password not found, set config to allow all connection."
+fi
+
+echo "host all all all $PG_AUTH_METHOD" >> "${PGDATA}/pg_hba.conf"
+

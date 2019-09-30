@@ -1,0 +1,11 @@
+datanodes:
+  count: 1
+coordinators:
+  count: 1
+proxies:
+  count: 1
+  enabled: true
+
+security:
+  passwords_secret_name: pgxl-passwords-collection
+  pg_password: pgpass

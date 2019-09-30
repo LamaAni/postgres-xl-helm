@@ -49,6 +49,6 @@ thus alowing for 13 chars of internal naming.
 {{- end }}
 
 {{- define "print_password_envs" }}
-{{ $args:=dict "name" "PGPASSWORD_TEST" "value" .Values.security.pg_password "secret_name" .Values.security.passwords_secret_name }}
+{{ $args:=dict "name" "PGPASSWORD" "value" .Values.security.pg_password "secret_name" .Values.security.passwords_secret_name }}
 {{ include "print_env_value_or_secret" ($args) }}
 {{- end -}}
