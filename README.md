@@ -39,11 +39,16 @@ name | description | default value
 --- | --- | ---
 image | the image to use | pavouk0/postgres-xl:XL_10_R1_1-6-g68c378f-4-g7a65119
 envs | Additional envs to add to all pods | [null]
+extraLabels | yaml for extract container labels to be added to all the pods | [null]
+config.log_level | The log level to use,  accepts : ERROR, WARNING, INFO, DEBUG, DEBUG1-DEBUG5 | WARNING
 config.managers_port | the port to use for transaction management (GTM or proxies) | 6666
 config.postgres_port | the internal postgres port | 5432
+config.append | A string to append to the end of the postgres config file. | [null]
 service.port | the external service port | 5432
 service.enabled | if true enables the external load balancer service | true
 service.type | The external service type | LoadBalancer
+security.passwords_secret_name | The kuberntes secret value set to be used for passwords. | [null]
+security.pg_password | The superuser postgres password | [null]
 
 ### For any StatefulSet
 
