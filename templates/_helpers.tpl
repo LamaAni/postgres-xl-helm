@@ -32,3 +32,23 @@ thus alowing for 13 chars of internal naming.
 {{- define "global.chart_full_name" }}
 {{- template "gloabl.chart_name" . }}-{{ .Chart.Version | replace "+" "_" }}
 {{- end -}}
+
+{{- define "print_env_value_or_secret" }}
+  {{- if .value }}
+    {{- if .secret_name }}
+- name: {{ .name }}
+  valueFrom:
+    secretKeyRef:
+      name: {{ .secret_name }}
+      key: {{ .value }}
+    {{- else }}
+- name: {{ .name }}
+  value: {{ .value }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+
+{{- define "print_password_envs" }}
+{{ $args:=dict "name" "PGPASSWORD" "value" .Values.security.pg_password "secret_name" .Values.security.passwords_secret_name }}
+{{ include "print_env_value_or_secret" ($args) }}
+{{- end -}}

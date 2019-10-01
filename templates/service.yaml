@@ -19,7 +19,7 @@ spec:
   type: {{ $config_col.type }}
   ports:
   - port: {{ $config_col.port }}
-    targetPort: {{ .Values.postgres_port }}
+    targetPort: {{ .Values.config.postgres_port }}
     name: pg
   selector:
     app: {{ $app_name }}

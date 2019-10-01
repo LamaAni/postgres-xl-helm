@@ -15,7 +15,7 @@ metadata:
 spec:
   clusterIP: None
   ports:
-  - port: {{ .Values.postgres_port }}
+  - port: {{ .Values.config.postgres_port }}
     name: pg
   selector:
     app: {{ $app_name }}
@@ -79,7 +79,7 @@ spec:
       - name: coordinator
         image: {{ .Values.image }}
         ports:
-          - containerPort: {{ .Values.postgres_port }}
+          - containerPort: {{ .Values.config.postgres_port }}
             name: pg
         command:
           - bash
@@ -114,6 +114,7 @@ spec:
                 fieldPath: status.podIP
           - name: NODE_TYPE
             value: coordinator
+{{- include "print_password_envs" . | indent 10 }}
         volumeMounts:
           - name: {{$app_name}}-scripts
             mountPath: /entry

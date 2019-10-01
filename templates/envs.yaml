@@ -14,9 +14,9 @@ data:
   LOGGING_PREFIX: "PGXL:HELM:"
   RESET_DB: "false"
 
-  # postgrs envs
-  PGUSER: postgres
-  PGPASSWORD: lama
+  # the postgres user to use for connections and the root
+  # db user.
+  PGUSER: {{ .Values.config.postgres_user }}
 
   # Added envs. These will not affect the db operation.
   {{- if .Values.envs }}
@@ -24,9 +24,9 @@ data:
   {{- end }}
   
   PG_GTM_HOST: {{ $app_name }}-svc-gtm
-  PG_GTM_PORT: "{{ .Values.managers_port }}"
+  PG_GTM_PORT: "{{ .Values.config.managers_port }}"
   PG_GTM_COORDINATOR_SVC_HOST: {{ $app_name }}-svc
-  PG_PORT: "{{ .Values.postgres_port }}"
+  PG_PORT: "{{ .Values.config.postgres_port }}"
   PG_HOST: "0.0.0.0"
   PGDATA: "{{ .Values.homedir }}/storage/data"
   STORAGE_MOUNT_PATH: "{{ .Values.homedir }}/storage"

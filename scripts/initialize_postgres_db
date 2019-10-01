@@ -9,31 +9,56 @@ fi
 
 if [ ! -f "${PGDATA}/postgres.conf" ]; then
   echo "$LOGGING_PREFIX Database configuration not found, calling initdb"
-  initdb \
-    -D "${PGDATA}" \
-    --nodename="${PG_NODE}"
+
+  PG_PW_FILE=""
+
+  # NOTE: authMethod will be handled in the initialize_networks script.
+
+  if [ -z "$PGPASSWORD" ]; then
+    echo "$LOGGING_PREFIX WARNING: Database superuser password not found, DB is insecure."
+    initdb \
+      -D "${PGDATA}" \
+      -U "${PGUSER}" \
+      --nodename="${PG_NODE}"
+  else
+    echo "$LOGGING_PREFIX Database superuser password found, initializing db with password."
+    PG_PW_FILE="/tmp/$(mktemp pgpass-XXXXX.pwd)"
+    echo "${PGPASSWORD}" > "$PG_PW_FILE"
+
+    initdb \
+      -A "md5"\
+      -D "${PGDATA}" \
+      -U "${PGUSER}" \
+      --nodename="${PG_NODE}" \
+      --pwfile="${PG_PW_FILE}"
+  fi
+
+  export PG_PW_FILE
 
   source "$cur_path/initialize_networks"
+
   cat /config/pg_config_append >> "${PGDATA}/postgres.conf"
   cat /config/config_append >> "${PGDATA}/postgres.conf"
 else
   echo "$LOGGING_PREFIX Database configuration found, init skipped."
 fi
 
-# required for postgrs permissions. 
+# required for postgrs permissions.
 # the loaded values are actually set by kuberntes. :(
 echo "$LOGGING_PREFIX Set data folder permissions 0700"
 chmod -R 0700 ${PGDATA}
 
-configure_postgres_service_connections: |
-#!/usr/bin/env bash
-cur_path="$(dirname ${BASH_SOURCE[0]})"
+configure_postgres_service_connections: \
+  |
+  
+  #!/usr/bin/env bash
+  cur_path="$(dirname ${BASH_SOURCE[0]})"
 
 # check for proxy.
 if [ "$PROXY_ENABLED" = "true" ]; then
   export PG_GTM_HOST="$PROXY_SERVICE"
   echo "$LOGGING_PREFIX looking for GTM proxy host @ $PG_GTM_HOST..."
-else 
+else
   echo "$LOGGING_PREFIX looking for GTM host @ $PG_GTM_HOST..."
 fi
 

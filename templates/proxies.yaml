@@ -16,9 +16,9 @@ metadata:
 spec:
   type: LoadBalancer
   ports:
-  - port: {{ .Values.managers_port }}
+  - port: {{ .Values.config.managers_port }}
     protocol: TCP
-    targetPort: {{ .Values.managers_port }}
+    targetPort: {{ .Values.config.managers_port }}
     name: gtm
   selector:
     app: {{ $app_name }}
@@ -71,7 +71,7 @@ spec:
       - name: proxy
         image: {{ .Values.image }}
         ports:
-          - containerPort: {{ .Values.managers_port }}
+          - containerPort: {{ .Values.config.managers_port }}
             name: gtm
         command:
           - bash
@@ -94,6 +94,7 @@ spec:
                 fieldPath: status.podIP
           - name: NODE_TYPE
             value: proxy
+{{- include "print_password_envs" . | indent 10 }}
         volumeMounts:
           - name: {{$app_name}}-scripts
             mountPath: /entry
