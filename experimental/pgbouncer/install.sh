@@ -6,7 +6,7 @@ PASSWORD="your_password"
 #=================================================================================================
 # SETUP PGXL
 #-------------------------------------------------------------------------------------------------
-git clone https://github.com/LamaAni/PGXL-HELM.git
+git clone --single-branch --branch pgbouncer https://github.com/sstubbs/PGXL-HELM.git
 cd PGXL-HELM/examples/deployments/with_password
 
 BASE64_PASSWORD=$(printf "${PASSWORD}" | base64)
