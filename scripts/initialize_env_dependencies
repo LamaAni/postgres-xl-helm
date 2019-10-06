@@ -9,10 +9,14 @@ if [ -z "$PG_NODE" ]; then
     datanode)
       PG_NODE="DN_${POD_INDEX}"
       POD_CLUSTER_INDEX=$((POD_INDEX+COORDINATOR_COUNT+PROXY_COUNT+1))
+      PGXL_NODE_INDEX=$((POD_INDEX+10000))
+      export PGXL_NODE_INDEX
     ;;
     coordinator)
       PG_NODE="CN_${POD_INDEX}"
       POD_CLUSTER_INDEX=$((POD_INDEX+PROXY_COUNT+1))
+      PGXL_NODE_INDEX=$((POD_INDEX+10000))
+      export PGXL_NODE_INDEX
     ;;
     proxy)
       PG_NODE="PXY_${POD_INDEX}"

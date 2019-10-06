@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# Checks if the gtm is alive and connected.
+
+# first check that the gtm is alive.
+ping "$GTM_SERVICE" -s 1 -c 1 -W 1 &> /dev/null
+if [ $? -ne 0 ]; then
+  echo "$LOGGING_PREFIX Cluster not ready, failed to ping gtm host @ $GTM_SERVICE" >> /dev/stderr
+  exit 1
+fi

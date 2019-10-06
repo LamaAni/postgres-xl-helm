@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+cur_path="$(dirname ${BASH_SOURCE[0]})"
+
+source "$cur_path/check_gtm_connection" || exit $?
+source "$cur_path/check_nodes_connection" || exit $?

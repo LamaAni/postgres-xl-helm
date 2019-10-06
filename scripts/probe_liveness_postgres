@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+cur_path="$(dirname ${BASH_SOURCE[0]})"
+
+service_active_file=$(realpath ~/service_activation_time)
+
+if [ ! -f "$service_active_file" ]; then
+    # dont check, not started yet.
+    exit 0
+fi
+
+source "$cur_path/check_postgres_is_alive" || exit $?

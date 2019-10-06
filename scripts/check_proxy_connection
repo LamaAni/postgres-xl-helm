@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+# check all proxies are connected.
+for i in $(seq 0 $PROXY_COUNT); do 
+
+  if [ $i -eq $PROXY_COUNT ]; then break; fi
+
+  node_full_name="${PROXY_BASENAME}-${i}"
+  node_host="${node_full_name}.${PROXY_SERVICE}"
+
+  nc -zv "$node_host" $PG_GTM_PORT &> /dev/null
+  if [ $? -ne 0 ]; then
+    echo "$LOGGING_PREFIX Cluster not ready, failed to connect to proxy at $node_host" >> /dev/stderr
+    exit 1
+  fi
+done
