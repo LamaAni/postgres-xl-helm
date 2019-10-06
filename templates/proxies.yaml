@@ -76,6 +76,12 @@ spec:
         command:
           - bash
           - /entry/proxy_entrypoint
+        readinessProbe:
+          exec:
+            command:
+            - /entry/probe_readiness_proxy
+          initialDelaySeconds: 5
+          periodSeconds: 5
         resources:
 {{- if $config_col.resources }}
 {{ toYaml $config_col.resources | indent 10 }}

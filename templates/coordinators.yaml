@@ -87,15 +87,15 @@ spec:
         readinessProbe:
           exec:
             command:
-            - /entry/nodes_healthcheck
+            - /entry/probe_readiness_coordinator
           initialDelaySeconds: 5
-          periodSeconds: 30
+          periodSeconds: 5
         livenessProbe:
           exec:
             command:
-            - /entry/pg_healthcheck
-          initialDelaySeconds: 5
-          periodSeconds: 30
+            - /entry/probe_liveness_postgres
+          initialDelaySeconds: 30
+          periodSeconds: 5
         resources:
 {{- if $config_col.resources }}
 {{ toYaml $config_col.resources | indent 10 }}

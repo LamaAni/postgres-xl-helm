@@ -13,7 +13,7 @@ metadata:
 {{ toYaml .Values.extraLabels | indent 4 }}
 {{- end }}
 spec:
-  type: LoadBalancer
+  clusterIP: None
   ports:
   - port: {{ .Values.config.managers_port }}
     protocol: TCP
@@ -30,7 +30,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata: 
-  name: {{ $app_name }}-gm
+  name: {{ $app_name }}-gtm
   labels:
     app: {{ $app_name }}
     chart: {{ $chart_name }}

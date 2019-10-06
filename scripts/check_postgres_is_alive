@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Check if postgres is alive.
+
+pg_isready || exit 1

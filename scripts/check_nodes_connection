@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Checks if all datanodes are alive and conneced to the network.
+# thid file will only run on coordinators.
 
 # check all datanodes are connected.
 for i in $(seq 0 $DATANODE_COUNT); do 
