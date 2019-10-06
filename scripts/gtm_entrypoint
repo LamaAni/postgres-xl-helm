@@ -35,6 +35,11 @@ if [ -z "$control_info" ]; then
 
 else
   echo "$LOGGING_PREFIX GTM configuration found, init skipped."
+  if [ -f "${PGDATA}/gtm.pid" ]; then
+    echo "$LOGGING_PREFIX GTM process not shut down properly, lock file gtm.pid still exists. Deleting."
+    rm "${PGDATA}/gtm.pid"
+  fi
+  
   echo "$LOGGING_PREFIX Current control state:"
   echo "$control_info"
   echo
