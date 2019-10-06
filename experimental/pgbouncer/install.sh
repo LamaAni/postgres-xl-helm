@@ -31,5 +31,54 @@ rm -rf PGXL-HELM
 #=================================================================================================
 # SETUP PGBOUNCER
 #-------------------------------------------------------------------------------------------------
+echo "apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pgbouncer-deployment
+  labels:
+    app: pgbouncer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pgbouncer
+  template:
+    metadata:
+      labels:
+        app: pgbouncer
+    spec:
+      containers:
+      - name: pgbouncer
+        image: pgbouncer/pgbouncer:1.11.0
+        ports:
+        - containerPort: 5432
+        command:
+          - "sh"
+          - "-c"
+          - >
+            echo \"
+              [databases]
+              * = host = zav-db-tran-postgres-xl-svc port=5432
 
+              [pgbouncer]
+              max_client_conn = 1000
+              default_pool_size = 5
+              max_db_connections = 100
+              listen_addr = *
+              listen_port = 5432
+              auth_type = md5
+              ignore_startup_parameters = extra_float_digits, intervalStyle
+              auth_file = /etc/pgbouncer/userlist.txt
+              auth_query = SELECT p_user, p_password FROM connection_pool.lookup(\\\$1)
+              auth_user = postgres
+
+              # Log settings
+              admin_users = postgres\" > /etc/pgbouncer/pgbouncer.ini;
+            MD5_CREDENTIALS="md5$(echo -n "${PASSWORD}postgres" | md5sum | awk '{print $1}')"; echo \"\\\"postgres\\\" \\\"\${MD5_CREDENTIALS}\\\"\" > /etc/pgbouncer/userlist.txt;
+            exec /opt/pgbouncer/pgbouncer /etc/pgbouncer/pgbouncer.ini;" > pgbouncer-deployment.yaml
+
+
+kubectl apply -f pgbouncer-deployment.yaml
+
+rm -rf pgbouncer-deployment.yaml
 #=================================================================================================
