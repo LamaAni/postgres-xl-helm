@@ -24,7 +24,7 @@ if [ ! -f "${PGDATA}/postgresql.conf" ]; then
     echo "${PGPASSWORD}" > "$PG_PW_FILE"
 
     initdb \
-      -A "md5"\
+      -A "${AUTH_TYPE}"\
       -D "${PGDATA}" \
       -U "${PGUSER}" \
       --nodename="${PG_NODE}" \

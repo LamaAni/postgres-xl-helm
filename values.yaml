@@ -34,6 +34,8 @@ security:
   # If passwords_secret_name exists, is the name of the secret
   # key. Otherwise the password.
   pg_password:
+  # Set the password authentication method
+  postgres_auth_type: md5
 
 # the coordinators external service.
 service:
