@@ -35,7 +35,7 @@ security:
   # key. Otherwise the password.
   pg_password:
   # Set the password authentication method
-  postgres_auth_type: md5
+  postgres_auth_type: scram-sha-256
 
 # the coordinators external service.
 service:
