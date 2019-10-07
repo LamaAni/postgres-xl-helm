@@ -1,13 +1,27 @@
 #!/bin/bash
 
 SECRETS_FILE="pwd_secret.yaml"
-PASSWORD="your_password"
+PASSWORD="your_password1"
+AUTH_METHOD="scram-sha-256"
 
 #=================================================================================================
 # SETUP PGXL
 #-------------------------------------------------------------------------------------------------
-git clone https://github.com/LamaAni/PGXL-HELM.git
+git clone https://github.com/sstubbs/PGXL-HELM.git
 cd PGXL-HELM/examples/deployments/with_password
+
+echo "datanodes:
+  count: 1
+coordinators:
+  count: 1
+proxies:
+  count: 1
+  enabled: true
+
+security:
+  passwords_secret_name: pgxl-passwords-collection
+  pg_password: pgpass
+  postgres_auth_type: ${AUTH_METHOD}" > values.yaml
 
 BASE64_PASSWORD=$(printf "${PASSWORD}" | base64)
 
@@ -31,6 +45,13 @@ rm -rf PGXL-HELM
 #=================================================================================================
 # SETUP PGBOUNCER
 #-------------------------------------------------------------------------------------------------
+PGBOUNCER_PASSWORD=""
+if [ "${AUTH_METHOD}" == "md5" ]; then
+    PGBOUNCER_PASSWORD="md5$(echo -n "${PASSWORD}postgres" | md5sum | awk '{print $1}')"
+else
+    PGBOUNCER_PASSWORD="${PASSWORD}"
+fi
+
 echo "apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -66,7 +87,7 @@ spec:
               max_db_connections = 100
               listen_addr = *
               listen_port = 5432
-              auth_type = md5
+              auth_type = ${AUTH_METHOD}
               ignore_startup_parameters = extra_float_digits, intervalStyle
               auth_file = /etc/pgbouncer/userlist.txt
               auth_query = SELECT p_user, p_password FROM connection_pool.lookup(\\\$1)
@@ -74,7 +95,7 @@ spec:
 
               # Log settings
               admin_users = postgres\" > /etc/pgbouncer/pgbouncer.ini;
-            MD5_CREDENTIALS="md5$(echo -n "${PASSWORD}postgres" | md5sum | awk '{print $1}')"; echo \"\\\"postgres\\\" \\\"\${MD5_CREDENTIALS}\\\"\" > /etc/pgbouncer/userlist.txt;
+            echo \"\\\"postgres\\\" \\\"${PGBOUNCER_PASSWORD}\\\"\" > /etc/pgbouncer/userlist.txt;
             exec /opt/pgbouncer/pgbouncer /etc/pgbouncer/pgbouncer.ini;" > pgbouncer-deployment.yaml
 
 

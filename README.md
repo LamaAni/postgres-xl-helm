@@ -49,6 +49,7 @@ service.enabled | if true enables the external load balancer service | true
 service.type | The external service type | LoadBalancer
 security.passwords_secret_name | The kuberntes secret value set to be used for passwords. | [null]
 security.pg_password | The superuser postgres password | [null]
+security.postgres_auth_type | The authentication type used | md5
 
 ### For any StatefulSet
 
