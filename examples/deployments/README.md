@@ -5,6 +5,10 @@ of the database.
 
 The examples use the tool [helmfile]() to deploy the chart onto a cluster.
 
+# Resources
+
+The resources chosen in these examples are specifically low to allow these examples to be tested on local machines. Recommended values for nodes can be found in the main README file.
+
 # Helmfile, in (very) short
 
 Allows for deploying helm releases, given either a directory or a repo url.
