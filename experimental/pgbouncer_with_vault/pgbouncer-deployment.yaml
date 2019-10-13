@@ -49,7 +49,7 @@ spec:
             - >
               DB_USERNAME=$(cat /etc/app/username) && DB_PASSWORD=$(cat /etc/app/password) && echo "
                 [databases]
-                * = host = zav-db-tran-postgres-xl-svc port=5432
+                * = host = db-vlt-pgb-postgres-xl-svc port=5432
 
                 [pgbouncer]
                 max_client_conn = 1000

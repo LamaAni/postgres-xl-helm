@@ -1,7 +1,7 @@
 # generate a transiant postgres-xl db. This db will 
 # NOT be able to withstand restarts.
 releases:
-  - name: zav-db-tran
+  - name: db-pgb
     # Use of a specific relaease. 
     # chart: https://github.com/LamaAni/PGXL-HELM/archive/0.5.0.tar.gz
     # Chart in directory

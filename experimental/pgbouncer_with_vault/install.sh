@@ -6,7 +6,7 @@ PASSWORD="your_password1"
 SINGLE_NODE_CLUSTER="true"
 CONSUL_NAME="consul"
 VAULT_NAME="vault"
-PGXL_SERVICE_NAME="zav-db-tran-postgres-xl-svc"
+PGXL_SERVICE_NAME="db-vlt-pgb-postgres-xl-svc"
 
 #=================================================================================================
 # SETUP PGXL

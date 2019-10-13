@@ -1,6 +1,6 @@
 #!/bin/bash
 
-helm delete zav-db-tran
+helm delete db-vlt-pgb
 helm delete consul
 helm delete vault
 kubectl delete deployment pgbouncer
