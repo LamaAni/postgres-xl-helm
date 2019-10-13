@@ -1,7 +1,28 @@
+# used limited resources to allo this
+# deployment to be tested on local systems.
+# Recommended values can be found in README and 
+# in the values file in this chart.
+gtm:
+  resources:
+    limits:
+      memory: "500Mi"
+      cpu: "250m"
 datanodes:
-  count: 4  
+  count: 2
+  resources:
+    limits:
+      memory: "500Mi"
+      cpu: "250m"
 coordinators:
   count: 2
+  resources:
+    limits:
+      memory: "500Mi"
+      cpu: "250m"
 proxies:
-  enabled: true
+  resources:
+    limits:
+      memory: "500Mi"
+      cpu: "250m"
   count: 1
+  enabled: true

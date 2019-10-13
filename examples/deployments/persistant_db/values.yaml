@@ -1,20 +1,40 @@
+# used limited resources to allo this
+# deployment to be tested on local systems.
+# Recommended values can be found in README and 
+# in the values file in this chart.
 gtm:
+  resources:
+    limits:
+      memory: "500Mi"
+      cpu: "250m"
   pvc:
     resources:
-        requests:
-          storage: 100Mi
+      requests:
+        storage: 100Mi
 datanodes:
-  count: 4
+  count: 2
+  resources:
+    limits:
+      memory: "500Mi"
+      cpu: "250m"
   pvc:
     resources:
-        requests:
-          storage: "4Gi"
+      requests:
+        storage: "4Gi"
 coordinators:
   count: 2
+  resources:
+    limits:
+      memory: "500Mi"
+      cpu: "250m"
   pvc:
     resources:
         requests:
           storage: 100Mi
 proxies:
+  resources:
+    limits:
+      memory: "500Mi"
+      cpu: "250m"
   count: 1
   enabled: true
