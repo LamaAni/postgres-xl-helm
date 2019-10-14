@@ -9,6 +9,21 @@ VAULT_NAME="vault"
 PGXL_SERVICE_NAME="db-vlt-pgb-postgres-xl-svc"
 
 #=================================================================================================
+# REUSABLE FUNCTIONS
+#-------------------------------------------------------------------------------------------------
+json_array() {
+  echo -n '['
+  while [ $# -gt 0 ]; do
+    x=${1//\\/\\\\}
+    echo -n \"${x//\"/\\\"}\"
+    [ $# -gt 1 ] && echo -n ', '
+    shift
+  done
+  echo ']'
+}
+#=================================================================================================
+
+#=================================================================================================
 # SETUP PGXL
 #-------------------------------------------------------------------------------------------------
 BASE64_PASSWORD=$(printf "${PASSWORD}" | base64)
@@ -111,17 +126,6 @@ END
 
 ROLE_AND_PG_SHADOW_LOOKUP=("${CONNECTION_POOL_ROLE_CREATION[@]}" "${CONNECTION_POOL_PGSHADOW_LOOKUP_FUNCTION[@]}")
 
-json_array() {
-  echo -n '['
-  while [ $# -gt 0 ]; do
-    x=${1//\\/\\\\}
-    echo -n \"${x//\"/\\\"}\"
-    [ $# -gt 1 ] && echo -n ', '
-    shift
-  done
-  echo ']'
-}
-
 ROLE_AND_PG_SHADOW_LOOKUP_JSON=$(json_array "${ROLE_AND_PG_SHADOW_LOOKUP[@]}")
 
 kubectl exec -it "${VAULT_NAME}-0" -- vault write database/roles/postgres-role \
@@ -129,6 +133,8 @@ kubectl exec -it "${VAULT_NAME}-0" -- vault write database/roles/postgres-role \
     creation_statements="${ROLE_AND_PG_SHADOW_LOOKUP_JSON}" \
     default_ttl="1h" \
     max_ttl="24h"
+
+CONNECTION_POOL_PGSHADOW_LOOKUP_FUNCTION_JSON=$(json_array "${CONNECTION_POOL_PGSHADOW_LOOKUP_FUNCTION[@]}")
 
 #=================================================================================================
 
