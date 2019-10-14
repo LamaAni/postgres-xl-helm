@@ -1,9 +1,21 @@
 datanodes:
   count: 1
+  resources:
+    limits:
+      memory: "500Mi"
+      cpu: "250m"
 coordinators:
   count: 1
+  resources:
+    limits:
+      memory: "500Mi"
+      cpu: "500m"
 proxies:
   count: 1
+  resources:
+    limits:
+      memory: "500Mi"
+      cpu: "250m"
   enabled: true
 
 security:
