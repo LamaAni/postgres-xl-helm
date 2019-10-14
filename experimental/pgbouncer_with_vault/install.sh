@@ -1,6 +1,5 @@
 #!/bin/bash
 
-SECRETS_FILE="pwd_secret.yaml"
 PASSWORD="your_password1"
 
 SINGLE_NODE_CLUSTER="true"
