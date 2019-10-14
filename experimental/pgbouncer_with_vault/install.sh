@@ -149,8 +149,8 @@ path \"sys/leases/renew\" {
 }
 path \"sys/leases/revoke\" {
   capabilities = [\"update\"]
-}' > postgres-policy.hcl; \
-vault policy write postgres-policy postgres-policy.hcl;"
+}' > connection-pool-role-policy.hcl; \
+vault policy write connection-pool-role-policy connection-pool-role-policy.hcl;"
 #-------------------------------------------------------------------------------------------------
 kubectl apply -f postgres-serviceaccount.yaml
 #-------------------------------------------------------------------------------------------------
@@ -166,7 +166,7 @@ kubectl exec -it "${VAULT_NAME}-0" -- vault write auth/kubernetes/config \
 kubectl exec -it "${VAULT_NAME}-0" -- vault write auth/kubernetes/role/postgres \
     bound_service_account_names=postgres-vault \
     bound_service_account_namespaces=default \
-    policies=postgres-policy \
+    policies=connection-pool-role-policy \
     ttl=24h;
 #=================================================================================================
 
