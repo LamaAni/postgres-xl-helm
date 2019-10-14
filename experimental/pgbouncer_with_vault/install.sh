@@ -11,33 +11,26 @@ PGXL_SERVICE_NAME="db-vlt-pgb-postgres-xl-svc"
 #=================================================================================================
 # REUSABLE FUNCTIONS
 #-------------------------------------------------------------------------------------------------
-json_array() {
-  echo -n '['
-  while [ $# -gt 0 ]; do
-    x=${1//\\/\\\\}
-    echo -n \"${x//\"/\\\"}\"
-    [ $# -gt 1 ] && echo -n ', '
-    shift
-  done
-  echo ']'
-}
+source ./functions.sh
 #=================================================================================================
 
 #=================================================================================================
 # SETUP PGXL
 #-------------------------------------------------------------------------------------------------
-BASE64_PASSWORD=$(printf "${PASSWORD}" | base64)
+BASE64_PASSWORD=$(printf "%s" "${PASSWORD}" | base64)
 
-echo "apiVersion: v1
+SECRET_TEMPLATE=$'apiVersion: v1
 kind: Secret
 metadata:
   name:  pgxl-passwords-collection
 type: Opaque
 data:
   # You must base64 encode your values. See: https://kubernetes.io/docs/concepts/configuration/secret/
-  pgpass: \"${BASE64_PASSWORD}\"" > "${SECRETS_FILE}"
+  pgpass: "{{BASE64_PASSWORD}}"'
 
-kubectl apply -f $SECRETS_FILE || exit 1
+SECRET=$(replace_with_env "${SECRET_TEMPLATE}")
+echo "${SECRET}" | kubectl apply -f -
+
 helmfile sync || exit 1
 #=================================================================================================
 
@@ -133,9 +126,6 @@ kubectl exec -it "${VAULT_NAME}-0" -- vault write database/roles/connection-pool
     creation_statements="${ROLE_AND_PG_SHADOW_LOOKUP_JSON}" \
     default_ttl="1h" \
     max_ttl="24h"
-
-CONNECTION_POOL_PGSHADOW_LOOKUP_FUNCTION_JSON=$(json_array "${CONNECTION_POOL_PGSHADOW_LOOKUP_FUNCTION[@]}")
-
 #=================================================================================================
 
 #=================================================================================================
