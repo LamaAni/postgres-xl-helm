@@ -79,33 +79,57 @@ kubectl exec -it "${VAULT_NAME}-0" -- vault write database/config/postgres \
     username="postgres" \
     password="${PASSWORD}"
 
-CONNECTION_POOL_ROLE_CREATION="
-CREATE ROLE connection_pool;
-CREATE ROLE \"{{name}}\" WITH LOGIN PASSWORD '{{password}}' VALID UNTIL '{{expiration}}' IN ROLE connection_pool;
-"
+CONNECTION_POOL_ROLE_CREATION=(
+"DO \$FUNC\$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'connection_pool') THEN
+        CREATE ROLE connection_pool;
+    END IF;
+END
+\$FUNC\$;"
+"CREATE ROLE \"{{name}}\" WITH LOGIN PASSWORD '{{password}}' VALID UNTIL '{{expiration}}' IN ROLE connection_pool;"
+)
 
-CONNECTION_POOL_PGSHADOW_LOOKUP_FUNCTION="
-CREATE SCHEMA connection_pool;
-GRANT USAGE ON SCHEMA connection_pool TO connection_pool;
-CREATE OR REPLACE FUNCTION connection_pool.lookup (
-   INOUT p_user     name,
-   OUT   p_password text
-) RETURNS record
-   LANGUAGE sql SECURITY DEFINER SET search_path = pg_catalog AS
-\$FUNC\$ SELECT usename, passwd FROM pg_shadow WHERE usename = p_user \$FUNC\$;
-REVOKE EXECUTE ON FUNCTION connection_pool.lookup(name) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION connection_pool.lookup(name) TO connection_pool;
-"
+CONNECTION_POOL_PGSHADOW_LOOKUP_FUNCTION=(
+"DO \$FUNC1\$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'connection_pool') THEN
+        CREATE SCHEMA connection_pool;
+        GRANT USAGE ON SCHEMA connection_pool TO connection_pool;
+        CREATE OR REPLACE FUNCTION connection_pool.lookup (
+           INOUT p_user     name,
+           OUT   p_password text
+        ) RETURNS record
+           LANGUAGE sql SECURITY DEFINER SET search_path = pg_catalog AS
+        \$FUNC2\$ SELECT usename, passwd FROM pg_shadow WHERE usename = p_user \$FUNC2\$;
+        REVOKE EXECUTE ON FUNCTION connection_pool.lookup(name) FROM PUBLIC;
+        GRANT EXECUTE ON FUNCTION connection_pool.lookup(name) TO connection_pool;
+    END IF;
+END
+\$FUNC1\$;"
+)
 
+ROLE_AND_PG_SHADOW_LOOKUP=("${CONNECTION_POOL_ROLE_CREATION[@]}" "${CONNECTION_POOL_PGSHADOW_LOOKUP_FUNCTION[@]}")
+
+json_array() {
+  echo -n '['
+  while [ $# -gt 0 ]; do
+    x=${1//\\/\\\\}
+    echo -n \"${x//\"/\\\"}\"
+    [ $# -gt 1 ] && echo -n ', '
+    shift
+  done
+  echo ']'
+}
+
+ROLE_AND_PG_SHADOW_LOOKUP_JSON=$(json_array "${ROLE_AND_PG_SHADOW_LOOKUP[@]}")
 
 kubectl exec -it "${VAULT_NAME}-0" -- vault write database/roles/postgres-role \
     db_name=postgres \
-    creation_statements="
-    ${CONNECTION_POOL_ROLE_CREATION}
-    ${CONNECTION_POOL_PGSHADOW_LOOKUP_FUNCTION}
-    " \
+    creation_statements="${ROLE_AND_PG_SHADOW_LOOKUP_JSON}" \
     default_ttl="1h" \
     max_ttl="24h"
+
 #=================================================================================================
 
 #=================================================================================================
@@ -122,29 +146,7 @@ path \"sys/leases/revoke\" {
 }' > postgres-policy.hcl; \
 vault policy write postgres-policy postgres-policy.hcl;"
 #-------------------------------------------------------------------------------------------------
-cat > postgres-serviceaccount.yml <<EOF
-apiVersion: rbac.authorization.k8s.io/v1beta1
-kind: ClusterRoleBinding
-metadata:
-  name: role-tokenreview-binding
-  namespace: default
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: system:auth-delegator
-subjects:
-- kind: ServiceAccount
-  name: postgres-vault
-  namespace: default
----
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: postgres-vault
-EOF
-#-------------------------------------------------------------------------------------------------
-kubectl apply -f postgres-serviceaccount.yml
-rm -rf postgres-serviceaccount.yml
+kubectl apply -f postgres-serviceaccount.yaml
 #-------------------------------------------------------------------------------------------------
 VAULT_SA_NAME=$(kubectl get sa postgres-vault -o jsonpath="{.secrets[*]['name']}"); \
 SA_JWT_TOKEN=$(kubectl get secret $VAULT_SA_NAME -o jsonpath="{.data.token}" | base64 --decode; echo); \
