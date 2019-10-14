@@ -28,7 +28,7 @@ spec:
               KUBE_TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token);
               curl --request POST --data '{"jwt": "'"$KUBE_TOKEN"'", "role": "postgres"}' http://vault:8200/v1/auth/kubernetes/login | jq -j '.auth.client_token' > /etc/vault/token;
               X_VAULT_TOKEN=$(cat /etc/vault/token);
-              curl --header "X-Vault-Token: $X_VAULT_TOKEN" http://vault:8200/v1/database/creds/postgres-role > /etc/app/creds.json;
+              curl --header "X-Vault-Token: $X_VAULT_TOKEN" http://vault:8200/v1/database/creds/connection-pool-role > /etc/app/creds.json;
               cat /etc/app/creds.json | jq -j '.data.username' > /etc/app/username;
               cat /etc/app/creds.json | jq -j '.data.password' > /etc/app/password;
           volumeMounts:

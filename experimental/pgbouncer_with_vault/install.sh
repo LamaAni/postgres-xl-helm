@@ -89,7 +89,7 @@ kubectl exec -it "${VAULT_NAME}-0" -- vault login "${ROOT_TOKEN}"
 kubectl exec -it "${VAULT_NAME}-0" -- vault secrets enable database
 kubectl exec -it "${VAULT_NAME}-0" -- vault write database/config/postgres \
     plugin_name=postgresql-database-plugin \
-    allowed_roles="postgres-role" \
+    allowed_roles="connection-pool-role" \
     connection_url="postgresql://{{username}}:{{password}}@${PGXL_SERVICE_NAME}:5432/postgres?sslmode=disable" \
     username="postgres" \
     password="${PASSWORD}"
@@ -128,7 +128,7 @@ ROLE_AND_PG_SHADOW_LOOKUP=("${CONNECTION_POOL_ROLE_CREATION[@]}" "${CONNECTION_P
 
 ROLE_AND_PG_SHADOW_LOOKUP_JSON=$(json_array "${ROLE_AND_PG_SHADOW_LOOKUP[@]}")
 
-kubectl exec -it "${VAULT_NAME}-0" -- vault write database/roles/postgres-role \
+kubectl exec -it "${VAULT_NAME}-0" -- vault write database/roles/connection-pool-role \
     db_name=postgres \
     creation_statements="${ROLE_AND_PG_SHADOW_LOOKUP_JSON}" \
     default_ttl="1h" \
@@ -141,7 +141,7 @@ CONNECTION_POOL_PGSHADOW_LOOKUP_FUNCTION_JSON=$(json_array "${CONNECTION_POOL_PG
 #=================================================================================================
 # SETUP K8S AUTH FOR VAULT
 #-------------------------------------------------------------------------------------------------
-kubectl exec -it "${VAULT_NAME}-0" -- sh -c "echo 'path \"database/creds/postgres-role\" {
+kubectl exec -it "${VAULT_NAME}-0" -- sh -c "echo 'path \"database/creds/connection-pool-role\" {
   capabilities = [\"read\"]
 }
 path \"sys/leases/renew\" {
