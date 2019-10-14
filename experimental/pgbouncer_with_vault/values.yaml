@@ -1,3 +1,5 @@
+image: sstubbs/pgxl:latest
+
 datanodes:
   count: 1
 coordinators:
