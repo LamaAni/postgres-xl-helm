@@ -1,11 +1,16 @@
 #!/bin/bash
 
+CHART_NAME="db-vlt-pgb"
+PGXL_SERVICE_NAME="${CHART_NAME}-postgres-xl-svc"
+
+SECRET_NAME="pgxl-passwords-collection"
+SECRET_KEY="pgpass"
 PASSWORD="your_password1"
+SECRET_VALUE=$(printf "%s" "${PASSWORD}" | base64)
 
 SINGLE_NODE_CLUSTER="true"
 CONSUL_NAME="consul"
 VAULT_NAME="vault"
-PGXL_SERVICE_NAME="db-vlt-pgb-postgres-xl-svc"
 
 #=================================================================================================
 # REUSABLE FUNCTIONS
@@ -16,19 +21,14 @@ source ./functions.sh
 #=================================================================================================
 # SETUP PGXL
 #-------------------------------------------------------------------------------------------------
-BASE64_PASSWORD=$(printf "%s" "${PASSWORD}" | base64)
+YAML_SECRET=$(replace_with_env "$(cat ./secret.yaml)")
+echo "${YAML_SECRET}" | kubectl apply -f -
 
-SECRET_TEMPLATE=$'apiVersion: v1
-kind: Secret
-metadata:
-  name:  pgxl-passwords-collection
-type: Opaque
-data:
-  # You must base64 encode your values. See: https://kubernetes.io/docs/concepts/configuration/secret/
-  pgpass: "{{BASE64_PASSWORD}}"'
+YAML_HELMFILE=$(replace_with_env "$(cat ./helmfile_template.yaml)")
+echo "${YAML_HELMFILE}" > helmfile.yaml
 
-SECRET=$(replace_with_env "${SECRET_TEMPLATE}")
-echo "${SECRET}" | kubectl apply -f -
+YAML_HELM_VALUES=$(replace_with_env "$(cat ./values_template.yaml)")
+echo "${YAML_HELM_VALUES}" > values.yaml
 
 helmfile sync || exit 1
 #=================================================================================================
@@ -130,15 +130,8 @@ kubectl exec -it "${VAULT_NAME}-0" -- vault write database/roles/connection-pool
 #=================================================================================================
 # SETUP K8S AUTH FOR VAULT
 #-------------------------------------------------------------------------------------------------
-kubectl exec -it "${VAULT_NAME}-0" -- sh -c "echo 'path \"database/creds/connection-pool-role\" {
-  capabilities = [\"read\"]
-}
-path \"sys/leases/renew\" {
-  capabilities = [\"create\"]
-}
-path \"sys/leases/revoke\" {
-  capabilities = [\"update\"]
-}' > connection-pool-role-policy.hcl; \
+CONNECTION_POOL_ROLE_POLICY_HCL=$(cat ./connection-pool-role-policy.hcl)
+kubectl exec -it "${VAULT_NAME}-0" -- sh -c "echo '${CONNECTION_POOL_ROLE_POLICY_HCL}' > connection-pool-role-policy.hcl; \
 vault policy write connection-pool-role-policy connection-pool-role-policy.hcl;"
 #-------------------------------------------------------------------------------------------------
 kubectl apply -f postgres-serviceaccount.yaml
@@ -168,7 +161,8 @@ kubectl exec -it "${VAULT_NAME}-0" -- vault write auth/kubernetes/role/postgres 
 #=================================================================================================
 # SETUP PGBOUNCER
 #-------------------------------------------------------------------------------------------------
-kubectl apply -f pgbouncer-deployment.yaml
+YAML_PGBOUNCER_DEPLOYMENT=$(replace_with_env "$(cat ./pgbouncer-deployment.yaml)")
+echo "${YAML_PGBOUNCER_DEPLOYMENT}" | kubectl apply -f -
 kubectl apply -f pgbouncer-service.yaml
 #=================================================================================================
 
