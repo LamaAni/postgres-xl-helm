@@ -24,13 +24,18 @@ source ./functions.sh
 YAML_SECRET=$(replace_with_env "$(cat ./secret.yaml)")
 echo "${YAML_SECRET}" | kubectl apply -f -
 
-YAML_HELMFILE=$(replace_with_env "$(cat ./helmfile_template.yaml)")
-echo "${YAML_HELMFILE}" > helmfile.yaml
+mkdir tmp
 
-YAML_HELM_VALUES=$(replace_with_env "$(cat ./values_template.yaml)")
-echo "${YAML_HELM_VALUES}" > values.yaml
+YAML_HELMFILE=$(replace_with_env "$(cat ./helmfile.yaml)")
+echo "${YAML_HELMFILE}" > tmp/helmfile.yaml
 
-helmfile sync || exit 1
+YAML_HELM_VALUES=$(replace_with_env "$(cat ./values.yaml)")
+echo "${YAML_HELM_VALUES}" > tmp/values.yaml
+
+cd tmp && helmfile sync || exit 1
+cd ../
+
+rm -rf tmp
 #=================================================================================================
 
 #=================================================================================================
