@@ -9,8 +9,8 @@ proxies:
   enabled: true
 
 security:
-  passwords_secret_name: pgxl-passwords-collection
-  pg_password: pgpass
+  passwords_secret_name: {{SECRET_NAME}}
+  pg_password: {{SECRET_KEY}}
   postgres_auth_type: md5
 
 service:
