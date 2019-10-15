@@ -1,4 +1,4 @@
-# Postgres-XL Chart
+# Postgres-XL HELM Chart
 
 [Postgres-XL](https://www.postgres-xl.org/) is an all-purpose fully ACID open source multi node scalable SQL database solution, based on [PostgreSQL](https://www.postgresql.org/).
 
@@ -149,5 +149,5 @@ chart dose not deal with partial restores.
 # Licence
 
 Copyright ©
-`Zav Shotan` and other [contributors](https://github.com/LamaAni/PGXL-HELM/graphs/contributors).
+`Zav Shotan` and other [contributors](https://github.com/LamaAni/postgres-xl-helm/graphs/contributors).
 It is free software, released under the MIT licence, and may be redistributed under the terms specified in `LICENSE`.

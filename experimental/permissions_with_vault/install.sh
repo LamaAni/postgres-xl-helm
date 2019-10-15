@@ -9,7 +9,7 @@ VAULT_NAME="vault"
 #=================================================================================================
 # SETUP PGXL
 #-------------------------------------------------------------------------------------------------
-git clone https://github.com/LamaAni/PGXL-HELM.git
+git clone https://github.com/LamaAni/postgres-xl-helm.git
 helm install "${PGXL_NAME}" ./PGXL-HELM
 rm -rf PGXL-HELM
 
