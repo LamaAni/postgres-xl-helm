@@ -5,7 +5,7 @@
 
 export PG_AUTH_METHOD="trust"
 if [ -n "$PGPASSWORD" ]; then
-  PG_AUTH_METHOD="md5"
+  PG_AUTH_METHOD="${AUTH_TYPE}"
   echo "$LOGGING_PREFIX Added network config to allow password protected connections."
 else 
   echo "$LOGGING_PREFIX WARNING: Superuser password not found, set config to allow all connection."
