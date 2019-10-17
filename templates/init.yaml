@@ -1,0 +1,109 @@
+
+{{- $app_name := include "global.app_name" . }}
+{{- $chart_name := include "global.chart_full_name" . }}
+{{- $config_col := .Values.on_load }}
+{{- if $config_col.enabled }}
+
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: {{$app_name}}-load-scripts
+  labels:
+    app: {{ $app_name }}
+    chart: {{ $chart_name }}
+data:
+  {{- range $i, $val := $config_col.init }}
+  init_{{ printf "%05d" $i }}_{{ $val.name }}: |-
+{{ $val.script | indent 4}}
+  {{- end }}
+  {{- range $i, $val := $config_col.startup }}
+  startup_{{ printf "%05d" $i }}_{{ $val.name }}: |-
+{{ $val.script | indent 4}}
+  {{- end }}
+
+---
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ $app_name }}-init-job
+  labels:
+    app: {{ $app_name }}
+    chart: {{ $chart_name }}
+    type: init-job
+{{- if .Values.extraLabels }}
+{{ toYaml .Values.extraLabels | indent 4 }}
+{{- end }}
+spec:
+  backoffLimit: {{ $config_col.back_off_limit }}
+  template:
+    metadata:
+      labels:
+        app: {{ $app_name }}
+        chart: {{ $chart_name }}
+        type: init-job
+{{- if .Values.extraLabels }}
+{{ toYaml .Values.extraLabels | indent 8 }}
+{{- end }}
+{{- if $config_col.injectJobYaml }}
+{{ toYaml $config_col.injectJobYaml | indent 2 }}
+{{- end }}
+    spec:
+      restartPolicy: OnFailure
+{{- if $config_col.injectSpecYaml }}
+{{ toYaml $config_col.injectSpecYaml | indent 6 }}
+{{- end }}
+      containers:
+      - name: init-job
+        image: "{{ default .Values.image $config_col.image }}"
+        command:
+          - bash
+          - /entry/job_on_load
+        envFrom:
+        - configMapRef:
+            name: {{$app_name}}-envs
+        resources:
+{{- if $config_col.resources }}
+{{ toYaml $config_col.resources | indent 10 }}
+{{- end }}
+        env:
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: POD_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+          - name: PGHOST
+            value: "{{ $app_name }}-svc"
+{{- include "print_password_envs" . | indent 10 }}
+        volumeMounts:
+          - name: {{$app_name}}-load-scripts
+            mountPath: /load_scripts
+          - name: {{$app_name}}-scripts
+            mountPath: /entry
+{{- if $config_col.volumeMounts }}
+{{ toYaml $config_col.volumeMounts | indent 10 }}
+{{- end }}
+{{- if $config_col.injectMainContainerYaml }}
+{{ toYaml $config_col.injectMainContainerYaml | indent 8 }}
+{{- end }}
+{{- if $config_col.addContainers }}
+{{ toYaml $config_col.addContainers | indent 6 }}
+{{- end }}
+      volumes:
+        - name: {{$app_name}}-scripts
+          configMap:
+            name: {{$app_name}}-scripts
+            defaultMode: 0777
+        - name: {{$app_name}}-load-scripts
+          configMap:
+            name: {{$app_name}}-load-scripts
+            defaultMode: 0777
+{{- if $config_col.volumes }}
+{{ toYaml $config_col.volumes | indent 8 }}
+{{- end }}
+
+# end of main condition.
+{{- end }}

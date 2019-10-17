@@ -23,7 +23,7 @@ data:
 
   # Added envs. These will not affect the db operation.
   {{- if .Values.envs }}
-  {{- toYaml .Values.envs | indent 2}}}
+{{ toYaml .Values.envs | indent 2}}
   {{- end }}
   
   PG_GTM_HOST: {{ $app_name }}-svc-gtm
@@ -33,6 +33,7 @@ data:
   PG_HOST: "0.0.0.0"
   PGDATA: "{{ .Values.homedir }}/storage/data"
   STORAGE_MOUNT_PATH: "{{ .Values.homedir }}/storage"
+  EXTERNAL_SERVICE: "{{ $app_name }}-svc"
 
   GTM_BASENAME: "{{ $app_name }}-gtm"
   GTM_SERVICE: "{{ $app_name }}-svc-gtm"

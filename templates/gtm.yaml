@@ -61,8 +61,8 @@ spec:
 {{- if .Values.extraLabels }}
 {{ toYaml .Values.extraLabels | indent 6 }}
 {{- end }}
-{{- if $config_col.injectDepYaml }}
-{{ toYaml $config_col.injectDepYaml | indent 2 }}
+{{- if $config_col.injectSTSYaml }}
+{{ toYaml $config_col.injectSTSYaml | indent 2 }}
 {{- end }}
   template:
     metadata:

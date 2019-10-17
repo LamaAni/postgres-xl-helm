@@ -1,0 +1,101 @@
+#!/usr/bin/env bash
+
+cur_path="$(dirname ${BASH_SOURCE[0]})"
+
+function log() {
+  echo "$LOGGING_PREFIX" "$@"
+}
+
+function assert() {
+  if [ "$1" -ne 0 ]; then
+    log "ERROR: " "$@"
+    return $1
+  fi
+  return 0
+}
+
+log "Waiting for database to be ready..."
+"$cur_path/wait_for_connection" "$EXTERNAL_SERVICE" "$PG_PORT"
+assert $? "ERRROR: Failed while waiting for database service to start." || exit $?
+
+function is_initialized() {
+  local dose_state_table_exist=""
+  dose_state_table_exist=$(psql -t -c "
+SELECT EXISTS (
+   SELECT 1
+   FROM   information_schema.tables 
+   WHERE  table_schema = 'postgres_xl_helm'
+   AND    table_name = 'state'
+   );
+" | tr -d '[[:space:]]')
+
+  if [ "$dose_state_table_exist" == "f" ]; then
+    return 0
+  fi
+
+  return 1
+}
+
+function initialize_pgxl_state() {
+  psql -c "
+CREATE SCHEMA IF NOT EXISTS postgres_xl_helm;
+DROP TABLE IF EXISTS postgres_xl_helm.state;
+CREATE TABLE postgres_xl_helm.state AS (SELECT 'initialized' as key, 'ok' as value);
+  " || return $?
+}
+
+function run_scripts_that_match() {
+  local pattern="$1"
+  local src_path="$(realpath "$2")"
+
+  log "Finding scripts that match pattern '$pattern' in folder '$src_path'"
+  local scripts=""
+  scripts="$(find "$src_path" -maxdepth 1 -name "$pattern" | sort)"
+  scripts=($scripts)
+
+  for fpath in "${scripts[@]}"; do
+    log "Executing script $fpath:"
+    local fname=$(basename "$fpath")
+    local fileext=${fname##*.}
+
+    case $fileext in
+    sh)
+      source "$fpath"
+      assert $? "ERROR: Error while executing init script file $fpath. Exiting... " || return $?
+      ;;
+    sql)
+      local sql_script=""
+      sql_script=$(cat "$fpath")
+      psql -c "$sql_script"
+      assert $? "ERROR: Error while executing init script file $fpath. Exiting... " || return $?
+      ;;
+    *)
+      assert 1 "ERROR: Cannot invoke filename with extention $fileext, skipping. Allowed [sql, sh]"
+      ;;
+    esac
+  done
+}
+
+pg_isready
+assert $? "Cannot connect to remote database" || exit $?
+
+is_initialized
+db_already_initialized=$?
+
+if [ $db_already_initialized -eq 0 ]; then
+  log "Database has not been initialized, calling init scripts.."
+
+  log "Invoking init scripts.."
+  run_scripts_that_match "init_*" "/load_scripts"
+  assert $? "Initialization scripts failed, exiting." || exit $?
+
+  log "Creating db postgres-xl-helm state tables"
+  initialize_pgxl_state
+  assert $? "Failed to initialize database for postgres-xl helm chart state." || exit $?
+else
+  log "Database already initialized. Skipping init scripts."
+fi
+
+log "Invoking startup scripts.."
+run_scripts_that_match "startup_*" "/load_scripts"
+assert $? "Startup scripts failed, exiting." || exit $?
