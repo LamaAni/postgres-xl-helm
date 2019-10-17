@@ -50,4 +50,4 @@ on_load:
         SELECT * FROM test.lama;
     - name: calling_external_file_through_env.sh
       script: |-
-        $EXTERNAL_BASH
+        bash -c "$EXTERNAL_BASH"
