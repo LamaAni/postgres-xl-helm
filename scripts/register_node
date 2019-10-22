@@ -24,12 +24,12 @@ function register_node(){
   case "$type" in 
     datanode)
       node_full_name="${DATANODE_BASENAME}-${idx}"
-      node_host="${node_full_name}.${DATANODE_SERVICE}"
+      node_host="local-alias-dn-$i"
       node_name="DN_$i"
     ;;
     coordinator)
       node_full_name="${COORDINATOR_BASENAME}-${idx}"
-      node_host="${node_full_name}.${COORDINATOR_SERVICE}"
+      node_host="local-alias-crd-$i"
       node_name="CN_$i"
     ;;
     *)

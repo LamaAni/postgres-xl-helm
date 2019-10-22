@@ -22,3 +22,22 @@ data:
   gtm_config_append: |
     # applies only on startup.
     log_min_messages = {{ upper .Values.config.log_level }}
+
+  host_aliases: | 
+    # list of hosts to alias, for datanode and coordinators.
+    # These short names are required by pg since the host 
+    # name is truncated by the Create Node sql query.
+    local-alias-gtm {{ $app_name }}-gtm-0.{{ $app_name }}-svc-gtm
+
+{{- range $i := until (int .Values.datanodes.count) }}
+    local-alias-dn-{{ $i }} {{ $app_name }}-dn-{{ $i }}.{{ $app_name }}-svc-dn
+{{- end }}
+
+{{- range $i := until (int .Values.coordinators.count) }}
+    local-alias-crd-{{ $i }} {{ $app_name }}-crd-{{ $i }}.{{ $app_name }}-svc-crd
+{{- end }}
+
+{{- range $i := until (int .Values.proxies.count) }}
+    local-alias-pxy-{{ $i }} {{ $app_name }}-pxy-{{ $i }}.{{ $app_name }}-svc-pxy
+{{- end }}
+
