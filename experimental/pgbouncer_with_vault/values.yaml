@@ -1,12 +1,23 @@
+# yaml anchor
+small_resource_limit: &small_resource_limit
+  limits:
+    memory: "500Mi"
+    cpu: "250m"
+
 image: sstubbs/pgxl:latest
 
+gtm:
+  resources: *small_resource_limit
 datanodes:
   count: 1
+  resources: *small_resource_limit
 coordinators:
   count: 1
+  resources: *small_resource_limit
 proxies:
   count: 1
   enabled: true
+  resources: *small_resource_limit
 
 security:
   passwords_secret_name: {{SECRET_NAME}}
@@ -15,3 +26,20 @@ security:
 
 service:
   type: ClusterIP
+
+on_load:
+  # set to 1 so if database create fails we will see
+  # it right away.
+  back_off_limit: 1
+  enabled: true
+  resources: *small_resource_limit
+  init:
+    - name: wait_for_connection.sh
+      script: |-
+        sleep 5
+    - name: connection_pool_create_base_user.sh
+      script: |-
+        psql -c "$CONNECTION_POOL_CREATE_BASE_USER"
+    - name: connection_pool_create_pgshadow_lookup.sh
+      script: |-
+        psql -c "$CONNECTION_POOL_CREATE_PGSHADOW_LOOKUP"

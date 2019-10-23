@@ -55,12 +55,15 @@ sleep 60
 #=================================================================================================
 # SETUP VAULT
 #-------------------------------------------------------------------------------------------------
-git clone --single-branch --branch v0.1.2 https://github.com/hashicorp/vault-helm.git
+git clone --single-branch --branch master https://github.com/hashicorp/vault-helm.git
+if [ "$SINGLE_NODE_CLUSTER" = true ]; then
+  sed -i '/affinity: |/,+8 s/^/#/' vault-helm/values.yaml
+fi
 sed -i "s/HOST_IP:8500/${CONSUL_NAME}-consul-server:8500/g" vault-helm/values.yaml
 helm install "${VAULT_NAME}" ./vault-helm --set='server.ha.enabled=true'
 rm -rf vault-helm
 
-sleep 15
+sleep 30
 
 INIT_OUTPUT=$(kubectl exec -it "${VAULT_NAME}-0" -- vault operator init -n 1 -t 1)
 
@@ -92,42 +95,14 @@ kubectl exec -it "${VAULT_NAME}-0" -- vault write database/config/postgres \
   password="${PASSWORD}"
 
 CONNECTION_POOL_ROLE_CREATION=(
-  "DO \$FUNC\$
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'connection_pool') THEN
-        CREATE ROLE connection_pool;
-    END IF;
-END
-\$FUNC\$;"
-  "CREATE ROLE \"{{name}}\" WITH LOGIN PASSWORD '{{password}}' VALID UNTIL '{{expiration}}' IN ROLE connection_pool;"
+  "$(cat ./sql/connection-pool-create-inherited-user.sql)"
 )
 
-CONNECTION_POOL_PGSHADOW_LOOKUP_FUNCTION=(
-  "DO \$FUNC1\$
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'connection_pool') THEN
-        CREATE SCHEMA connection_pool;
-        GRANT USAGE ON SCHEMA connection_pool TO connection_pool;
-        CREATE OR REPLACE FUNCTION connection_pool.lookup (
-           INOUT p_user     name,
-           OUT   p_password text
-        ) RETURNS record
-           LANGUAGE sql SECURITY DEFINER SET search_path = pg_catalog AS
-        \$FUNC2\$ SELECT usename, passwd FROM pg_shadow WHERE usename = p_user \$FUNC2\$;
-        REVOKE EXECUTE ON FUNCTION connection_pool.lookup(name) FROM PUBLIC;
-        GRANT EXECUTE ON FUNCTION connection_pool.lookup(name) TO connection_pool;
-    END IF;
-END
-\$FUNC1\$;"
-)
-
-ROLE_AND_PG_SHADOW_LOOKUP=("${CONNECTION_POOL_ROLE_CREATION[@]}" "${CONNECTION_POOL_PGSHADOW_LOOKUP_FUNCTION[@]}")
-
-ROLE_AND_PG_SHADOW_LOOKUP_JSON=$(json_array "${ROLE_AND_PG_SHADOW_LOOKUP[@]}")
+CONNECTION_POOL_ROLE_CREATION_JSON=$(json_array "${CONNECTION_POOL_ROLE_CREATION[@]}")
 
 kubectl exec -it "${VAULT_NAME}-0" -- vault write database/roles/connection-pool-role \
   db_name=postgres \
-  creation_statements="${ROLE_AND_PG_SHADOW_LOOKUP_JSON}" \
+  creation_statements="${CONNECTION_POOL_ROLE_CREATION_JSON}" \
   default_ttl="1h" \
   max_ttl="24h"
 #=================================================================================================
@@ -135,9 +110,7 @@ kubectl exec -it "${VAULT_NAME}-0" -- vault write database/roles/connection-pool
 #=================================================================================================
 # SETUP K8S AUTH FOR VAULT
 #-------------------------------------------------------------------------------------------------
-CONNECTION_POOL_ROLE_POLICY_HCL=$(cat ./connection-pool-role-policy.hcl)
-kubectl exec -it "${VAULT_NAME}-0" -- sh -c "echo '${CONNECTION_POOL_ROLE_POLICY_HCL}' > connection-pool-role-policy.hcl; \
-vault policy write connection-pool-role-policy connection-pool-role-policy.hcl;"
+kubectl exec -it "${VAULT_NAME}-0" -- sh -c "echo '$(cat ./connection-pool-role-policy.hcl)' > ~/connection-pool-role-policy.hcl; vault policy write connection-pool-role-policy ~/connection-pool-role-policy.hcl;"
 #-------------------------------------------------------------------------------------------------
 kubectl apply -f postgres-serviceaccount.yaml
 #-------------------------------------------------------------------------------------------------
