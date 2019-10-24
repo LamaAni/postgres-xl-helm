@@ -48,8 +48,13 @@ if [ "${SINGLE_NODE_CLUSTER}" = "true" ]; then
 fi
 helm install "${CONSUL_NAME}" ./consul-helm
 rm -rf consul-helm
+#=================================================================================================
 
-sleep 60
+#=================================================================================================
+# WAIT FOR PGXL AND CONSUL
+#-------------------------------------------------------------------------------------------------
+kubectl wait --for=condition=ready pod -l "app=${CHART_NAME}-postgres-xl" --timeout=60s
+kubectl wait --for=condition=ready pod -l "app=${CONSUL_NAME}" --timeout=60s
 #=================================================================================================
 
 #=================================================================================================
@@ -63,7 +68,7 @@ sed -i "s/HOST_IP:8500/${CONSUL_NAME}-consul-server:8500/g" vault-helm/values.ya
 helm install "${VAULT_NAME}" ./vault-helm --set='server.ha.enabled=true'
 rm -rf vault-helm
 
-sleep 30
+sleep 15
 
 INIT_OUTPUT=$(kubectl exec -it "${VAULT_NAME}-0" -- vault operator init -n 1 -t 1)
 
@@ -78,7 +83,7 @@ kubectl exec -it "${VAULT_NAME}-0" -- vault operator unseal "${UNSEAL_KEY}"
 kubectl exec -it "${VAULT_NAME}-1" -- vault operator unseal "${UNSEAL_KEY}"
 kubectl exec -it "${VAULT_NAME}-2" -- vault operator unseal "${UNSEAL_KEY}"
 
-sleep 15
+kubectl wait --for=condition=ready pod -l "app.kubernetes.io/name=${VAULT_NAME}" --timeout=60s
 
 kubectl exec -it "${VAULT_NAME}-0" -- vault login "${ROOT_TOKEN}"
 #=================================================================================================
