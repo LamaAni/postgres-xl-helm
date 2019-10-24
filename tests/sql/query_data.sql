@@ -1,0 +1,1 @@
+SELECT * FROM "{{SCHEMA_NAME}}"."{{TABLE_NAME}}";
