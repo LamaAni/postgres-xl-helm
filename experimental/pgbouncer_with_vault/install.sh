@@ -3,10 +3,11 @@
 CHART_NAME="db-vlt-pgb"
 PGXL_SERVICE_NAME="${CHART_NAME}-postgres-xl-svc"
 
-SECRET_NAME="pgxl-passwords-collection"
-SECRET_KEY="pgpass"
+export SECRET_NAME="pgxl-passwords-collection"
+export SECRET_KEY="pgpass"
 PASSWORD="your_password1"
-SECRET_VALUE=$(printf "%s" "${PASSWORD}" | base64)
+SECRET_VALUE="$(printf "%s" "${PASSWORD}" | base64)"
+export SECRET_VALUE=$SECRET_VALUE
 
 SINGLE_NODE_CLUSTER="true"
 CONSUL_NAME="consul"
@@ -41,8 +42,8 @@ rm -rf tmp
 #=================================================================================================
 # SETUP CONSUL
 #-------------------------------------------------------------------------------------------------
-# Turns of affinity if one node cluster is set to true for testing purposes
 git clone --single-branch --branch v0.9.0 https://github.com/hashicorp/consul-helm.git
+# Turns off affinity if one node cluster is set to true for testing purposes
 if [ "${SINGLE_NODE_CLUSTER}" = "true" ]; then
   sed -i '/affinity: |/,+8 s/^/#/' consul-helm/values.yaml
 fi
@@ -61,6 +62,7 @@ kubectl wait --for=condition=ready pod -l "app=${CONSUL_NAME}" --timeout=60s
 # SETUP VAULT
 #-------------------------------------------------------------------------------------------------
 git clone --single-branch --branch master https://github.com/hashicorp/vault-helm.git
+# Turns off affinity if one node cluster is set to true for testing purposes
 if [ "${SINGLE_NODE_CLUSTER}" = "true" ]; then
   sed -i '/affinity: |/,+8 s/^/#/' vault-helm/values.yaml
 fi
@@ -128,7 +130,7 @@ SA_CA_CRT=$(
   kubectl get secret "${VAULT_SA_NAME}" -o jsonpath="{.data['ca\.crt']}" | base64 --decode
   echo
 )
-K8S_HOST=$(kubectl exec consul-consul-server-0 -- sh -c 'echo $KUBERNETES_SERVICE_HOST')
+K8S_HOST=$(kubectl exec "${CONSUL_NAME}-consul-server-0" -- sh -c 'echo $KUBERNETES_SERVICE_HOST')
 kubectl exec -it "${VAULT_NAME}-0" -- vault auth enable kubernetes
 kubectl exec -it "${VAULT_NAME}-0" -- vault write auth/kubernetes/config \
   token_reviewer_jwt="$SA_JWT_TOKEN" \
