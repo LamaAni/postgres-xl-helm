@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 helm delete db-vlt-pgb
 helm delete consul

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 CHART_NAME="db-vlt-pgb"
 PGXL_SERVICE_NAME="${CHART_NAME}-postgres-xl-svc"
@@ -11,7 +11,10 @@ export SECRET_VALUE=$SECRET_VALUE
 
 SINGLE_NODE_CLUSTER="true"
 CONSUL_NAME="consul"
-VAULT_NAME="vault"
+export VAULT_NAME="vault"
+
+ALLOWED_VAULT_ROLES="connection-pool-role"
+ALLOWED_VAULT_POLICIES="connection-pool-role-policy"
 
 #=================================================================================================
 # REUSABLE FUNCTIONS
@@ -91,33 +94,26 @@ kubectl exec -it "${VAULT_NAME}-0" -- vault login "${ROOT_TOKEN}"
 #=================================================================================================
 
 #=================================================================================================
-# SETUP VAULT PGXL ROLES
+# CONFIGURE VAULT PGXL ENDPOINT
 #-------------------------------------------------------------------------------------------------
 kubectl exec -it "${VAULT_NAME}-0" -- vault secrets enable database
 kubectl exec -it "${VAULT_NAME}-0" -- vault write database/config/postgres \
   plugin_name=postgresql-database-plugin \
-  allowed_roles="connection-pool-role" \
+  allowed_roles="${ALLOWED_VAULT_ROLES}" \
   connection_url="postgresql://{{username}}:{{password}}@${PGXL_SERVICE_NAME}:5432/postgres?sslmode=disable" \
   username="postgres" \
   password="${PASSWORD}"
+#=================================================================================================
 
-CONNECTION_POOL_ROLE_CREATION=(
-  "$(cat ./sql/connection-pool-create-inherited-user.sql)"
-)
-
-CONNECTION_POOL_ROLE_CREATION_JSON=$(json_array "${CONNECTION_POOL_ROLE_CREATION[@]}")
-
-kubectl exec -it "${VAULT_NAME}-0" -- vault write database/roles/connection-pool-role \
-  db_name=postgres \
-  creation_statements="${CONNECTION_POOL_ROLE_CREATION_JSON}" \
-  default_ttl="1h" \
-  max_ttl="24h"
+#=================================================================================================
+# SETUP VAULT ROLES AND POLICIES
+#-------------------------------------------------------------------------------------------------
+bash ./vault/roles/connection_pool_role.sh
+kubectl exec -it "${VAULT_NAME}-0" -- sh -c "echo '$(cat ./vault/policies/connection-pool-role-policy.hcl)' > ~/connection-pool-role-policy.hcl; vault policy write connection-pool-role-policy ~/connection-pool-role-policy.hcl;"
 #=================================================================================================
 
 #=================================================================================================
 # SETUP K8S AUTH FOR VAULT
-#-------------------------------------------------------------------------------------------------
-kubectl exec -it "${VAULT_NAME}-0" -- sh -c "echo '$(cat ./connection-pool-role-policy.hcl)' > ~/connection-pool-role-policy.hcl; vault policy write connection-pool-role-policy ~/connection-pool-role-policy.hcl;"
 #-------------------------------------------------------------------------------------------------
 kubectl apply -f postgres-serviceaccount.yaml
 #-------------------------------------------------------------------------------------------------
@@ -133,13 +129,13 @@ SA_CA_CRT=$(
 K8S_HOST=$(kubectl exec "${CONSUL_NAME}-consul-server-0" -- sh -c 'echo $KUBERNETES_SERVICE_HOST')
 kubectl exec -it "${VAULT_NAME}-0" -- vault auth enable kubernetes
 kubectl exec -it "${VAULT_NAME}-0" -- vault write auth/kubernetes/config \
-  token_reviewer_jwt="$SA_JWT_TOKEN" \
-  kubernetes_host="https://$K8S_HOST:443" \
-  kubernetes_ca_cert="$SA_CA_CRT"
+  token_reviewer_jwt="${SA_JWT_TOKEN}" \
+  kubernetes_host="https://${K8S_HOST}:443" \
+  kubernetes_ca_cert="${SA_CA_CRT}"
 kubectl exec -it "${VAULT_NAME}-0" -- vault write auth/kubernetes/role/postgres \
   bound_service_account_names=postgres-vault \
   bound_service_account_namespaces=default \
-  policies=connection-pool-role-policy \
+  policies="${ALLOWED_VAULT_POLICIES}" \
   ttl=24h
 #=================================================================================================
 
