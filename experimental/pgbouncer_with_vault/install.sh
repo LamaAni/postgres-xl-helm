@@ -43,7 +43,7 @@ rm -rf tmp
 #-------------------------------------------------------------------------------------------------
 # Turns of affinity if one node cluster is set to true for testing purposes
 git clone --single-branch --branch v0.9.0 https://github.com/hashicorp/consul-helm.git
-if [ "$SINGLE_NODE_CLUSTER" = true ]; then
+if [ "${SINGLE_NODE_CLUSTER}" = "true" ]; then
   sed -i '/affinity: |/,+8 s/^/#/' consul-helm/values.yaml
 fi
 helm install "${CONSUL_NAME}" ./consul-helm
@@ -56,7 +56,7 @@ sleep 60
 # SETUP VAULT
 #-------------------------------------------------------------------------------------------------
 git clone --single-branch --branch master https://github.com/hashicorp/vault-helm.git
-if [ "$SINGLE_NODE_CLUSTER" = true ]; then
+if [ "${SINGLE_NODE_CLUSTER}" = "true" ]; then
   sed -i '/affinity: |/,+8 s/^/#/' vault-helm/values.yaml
 fi
 sed -i "s/HOST_IP:8500/${CONSUL_NAME}-consul-server:8500/g" vault-helm/values.yaml
@@ -70,9 +70,9 @@ INIT_OUTPUT=$(kubectl exec -it "${VAULT_NAME}-0" -- vault operator init -n 1 -t 
 sleep 15
 
 UNSEAL_KEY=$(echo "${INIT_OUTPUT}" | grep 'Unseal Key 1:' | cut -d" " -f4)
-UNSEAL_KEY=$(sed 's/\x1b\[[0-9;]*m//g' <<<$UNSEAL_KEY) # remove ansi colour ^[[0m^M
+UNSEAL_KEY=$(sed 's/\x1b\[[0-9;]*m//g' <<<"${UNSEAL_KEY}") # remove ansi colour ^[[0m^M
 ROOT_TOKEN=$(echo "${INIT_OUTPUT}" | grep 'Initial Root Token:' | cut -d" " -f4)
-ROOT_TOKEN=$(sed 's/\x1b\[[0-9;]*m//g' <<<$ROOT_TOKEN) # remove ansi colour ^[[0m^M
+ROOT_TOKEN=$(sed 's/\x1b\[[0-9;]*m//g' <<<"${ROOT_TOKEN}") # remove ansi colour ^[[0m^M
 
 kubectl exec -it "${VAULT_NAME}-0" -- vault operator unseal "${UNSEAL_KEY}"
 kubectl exec -it "${VAULT_NAME}-1" -- vault operator unseal "${UNSEAL_KEY}"
@@ -116,11 +116,11 @@ kubectl apply -f postgres-serviceaccount.yaml
 #-------------------------------------------------------------------------------------------------
 VAULT_SA_NAME=$(kubectl get sa postgres-vault -o jsonpath="{.secrets[*]['name']}")
 SA_JWT_TOKEN=$(
-  kubectl get secret $VAULT_SA_NAME -o jsonpath="{.data.token}" | base64 --decode
+  kubectl get secret "${VAULT_SA_NAME}" -o jsonpath="{.data.token}" | base64 --decode
   echo
 )
 SA_CA_CRT=$(
-  kubectl get secret $VAULT_SA_NAME -o jsonpath="{.data['ca\.crt']}" | base64 --decode
+  kubectl get secret "${VAULT_SA_NAME}" -o jsonpath="{.data['ca\.crt']}" | base64 --decode
   echo
 )
 K8S_HOST=$(kubectl exec consul-consul-server-0 -- sh -c 'echo $KUBERNETES_SERVICE_HOST')
