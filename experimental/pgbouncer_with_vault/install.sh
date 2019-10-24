@@ -12,10 +12,6 @@ export SECRET_VALUE=$SECRET_VALUE
 SINGLE_NODE_CLUSTER="true"
 CONSUL_NAME="consul"
 export VAULT_NAME="vault"
-
-ALLOWED_VAULT_ROLES="connection-pool-role"
-ALLOWED_VAULT_POLICIES="connection-pool-role-policy"
-
 #=================================================================================================
 # REUSABLE FUNCTIONS
 #-------------------------------------------------------------------------------------------------
@@ -97,6 +93,7 @@ kubectl exec -it "${VAULT_NAME}-0" -- vault login "${ROOT_TOKEN}"
 # CONFIGURE VAULT PGXL ENDPOINT
 #-------------------------------------------------------------------------------------------------
 kubectl exec -it "${VAULT_NAME}-0" -- vault secrets enable database
+ALLOWED_VAULT_ROLES="$(printf %s "$(ls ./vault/roles | awk -F. '{print $1}')" | tr '\n' ',')"
 kubectl exec -it "${VAULT_NAME}-0" -- vault write database/config/postgres \
   plugin_name=postgresql-database-plugin \
   allowed_roles="${ALLOWED_VAULT_ROLES}" \
@@ -108,8 +105,17 @@ kubectl exec -it "${VAULT_NAME}-0" -- vault write database/config/postgres \
 #=================================================================================================
 # SETUP VAULT ROLES AND POLICIES
 #-------------------------------------------------------------------------------------------------
-bash ./vault/roles/connection_pool_role.sh
-kubectl exec -it "${VAULT_NAME}-0" -- sh -c "echo '$(cat ./vault/policies/connection-pool-role-policy.hcl)' > ~/connection-pool-role-policy.hcl; vault policy write connection-pool-role-policy ~/connection-pool-role-policy.hcl;"
+# Run all scripts from ./vault/roles directory
+ls ./vault/roles | while read -r fname
+do
+  bash "./vault/roles/${fname}"
+done
+
+# Apply all policies from ./vault/policies directory
+ls ./vault/policies | while read -r fname
+do
+  kubectl exec -it "${VAULT_NAME}-0" -- sh -c "echo '$(cat "./vault/policies/${fname}")' > ~/${fname}; vault policy write ${fname%%.*} ~/${fname};"
+done
 #=================================================================================================
 
 #=================================================================================================
@@ -132,6 +138,7 @@ kubectl exec -it "${VAULT_NAME}-0" -- vault write auth/kubernetes/config \
   token_reviewer_jwt="${SA_JWT_TOKEN}" \
   kubernetes_host="https://${K8S_HOST}:443" \
   kubernetes_ca_cert="${SA_CA_CRT}"
+ALLOWED_VAULT_POLICIES="$(printf %s "$(ls ./vault/policies | awk -F. '{print $1}')" | tr '\n' ',')"
 kubectl exec -it "${VAULT_NAME}-0" -- vault write auth/kubernetes/role/postgres \
   bound_service_account_names=postgres-vault \
   bound_service_account_namespaces=default \
