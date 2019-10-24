@@ -149,9 +149,9 @@ kubectl exec -it "${VAULT_NAME}-0" -- vault write auth/kubernetes/role/postgres 
 #=================================================================================================
 # SETUP PGBOUNCER
 #-------------------------------------------------------------------------------------------------
-YAML_PGBOUNCER_DEPLOYMENT=$(replace_with_env "$(cat ./pgbouncer-deployment.yaml)")
+YAML_PGBOUNCER_DEPLOYMENT=$(replace_with_env "$(cat ./pgbouncer/pgbouncer-deployment.yaml)")
 echo "${YAML_PGBOUNCER_DEPLOYMENT}" | kubectl apply -f -
-kubectl apply -f pgbouncer-service.yaml
+kubectl apply -f ./pgbouncer/pgbouncer-service.yaml
 #=================================================================================================
 
 #=================================================================================================
