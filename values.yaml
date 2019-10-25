@@ -37,6 +37,24 @@ security:
   # Set the password authentication method
   postgres_auth_type: md5
 
+# Configuration for a job that is called when the database
+# has finisjed loading.
+on_load:
+  enabled: false
+  # the number of times the job will restart.
+  back_off_limit: 5
+  # if set, will deterime the startup script resources.
+  resources:
+    limits:
+      memory: "250Mi"
+      cpu: "250m"
+  # array of startup scripts, to be called whenever
+  # the database is loaded. 
+  startup:
+  # array of init scripts to be called only when the 
+  # the database is first initialized.
+  init:
+
 # the coordinators external service.
 service:
   enabled: true

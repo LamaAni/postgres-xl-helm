@@ -1,0 +1,53 @@
+# yaml anchor
+small_resource_limit: &small_resource_limit
+    limits:
+      memory: "500Mi"
+      cpu: "250m"
+gtm:
+  resources: *small_resource_limit
+datanodes:
+  count: 1
+  resources: *small_resource_limit
+coordinators:
+  count: 1
+  resources: *small_resource_limit
+proxies:
+  count: 1
+  enabled: true
+  resources: *small_resource_limit
+
+on_load:
+  # set to 1 so if database create fails we will see
+  # it right away.
+  back_off_limit: 1
+  enabled: true
+  resources: *small_resource_limit
+  init:
+    # add an init sql script to executed with
+    # the admin postgres user
+    - name: create_database.sh
+      script: |-
+        psql -c "CREATE DATABASE tester;"
+        export PGDATABASE="tester"
+    - name: create_base_tables.sql
+      script: |-
+        CREATE SCHEMA test;
+        CREATE TABLE test.lama as (SELECT 'the brown rabbit' as col_1);
+    # add an init bash script to be excuted
+    # as postgres user (whatever it is)
+    - name: echo_all_ok.sh
+      script: |-
+        echo "Seems to be ok"
+
+  startup:
+    # add a startup sql script to executed with
+    # the root user, every time the db loads.
+    - name: init_envs.sh
+      script: |-
+        export PGDATABASE="tester"
+    - name: validate_by_selecting.sql
+      script: |-
+        SELECT * FROM test.lama;
+    - name: calling_external_file_through_env.sh
+      script: |-
+        bash -c "$EXTERNAL_BASH"

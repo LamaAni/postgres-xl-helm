@@ -1,8 +1,8 @@
 # generate a transiant postgres-xl db. This db will 
 # NOT be able to withstand restarts.
 releases:
-  - name: {{CHART_NAME}}
-    # Use of a specific relaease.
+  - name: test-scripts
+    # Use of a specific relaease. 
     # chart: https://github.com/LamaAni/postgres-xl-helm/archive/0.5.0.tar.gz
     # Chart in directory
     chart: ../../../
@@ -10,11 +10,10 @@ releases:
       - ./values.yaml
       # can also added inline, example:
       # - datanodes:
-      #     count: 4  
+      #     count: 4
       #   coordinators:
       #     count: 2
       - envs:
-          CONNECTION_POOL_CREATE_BASE_USER: |-
-{{ readFile "../sql/connection-pool-create-base-user.sql" | indent 12 }}
-          CONNECTION_POOL_CREATE_PGSHADOW_LOOKUP: |-
-{{ readFile "../sql/connection-pool-create-pgshadow-lookup.sql" | indent 12 }}
+          EXTERNAL_BASH: |-
+{{ readFile "./external_bash" | indent 12 }}
+
