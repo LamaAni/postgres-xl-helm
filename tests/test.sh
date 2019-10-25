@@ -68,7 +68,7 @@ testQueryData() {
 # DELETE CHART
 #-------------------------------------------------------------------------------------------------
 # Install the chart
-testDeleteChartt() {
+testDeleteChart() {
   helm delete "${CHART_NAME}"
   assertEquals 1 1
 }
