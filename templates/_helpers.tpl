@@ -7,7 +7,7 @@ Create a default fully qualified kubernetes name, with max 50 chars,
 thus alowing for 13 chars of internal naming.
 */}}
 {{- define "to_kube_valid_name" -}}
-  {{- include "clean_kube_name" (dict "name" .name) | trunc 50 | trimSuffix "-" -}}
+  {{- include "clean_kube_name" (dict "name" .name) | trunc 45 | trimSuffix "-" -}}
 {{- end -}}
 
 {{- define "gloabl.chart_name" -}}
