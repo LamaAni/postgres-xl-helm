@@ -16,7 +16,7 @@ source './functions.sh'
 #-------------------------------------------------------------------------------------------------
 # Install the chart
 testInstallChart() {
-  (cd "../examples/deployments/${CHART_NAME}_db" && helmfile sync || echo "there was an error with deployment" && exit 1)
+  (cd "../../examples/deployments/${CHART_NAME}_db" && helmfile sync || echo "there was an error with deployment" && exit 1)
   (kubectl wait --for=condition=ready pod -l "app=${CHART_NAME}-postgres-xl" --timeout=60s || echo "there was an error with deployment" && exit 1)
   echo "successfully installed ${CHART_NAME}"
   sleep 15
