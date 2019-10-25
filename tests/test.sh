@@ -86,8 +86,6 @@ test_query_data() {
 
   RESULT=$(kubectl exec -it "${CHART_NAME}-postgres-xl-crd-0" -- psql -t -d "${DATABASE_NAME}" -c "${SQL_QUERY_DATA}" | tr '\n' ' ' | tr -d '\r' | xargs)
 
-  echo $RESULT
-
   assert_eq "${RESULT}" "the brown rabbit"
   if [ "$?" == 0 ]; then
     log_success "successfully queried data"
@@ -105,8 +103,6 @@ delete_chart() {
   helm delete "${CHART_NAME}"
   log_success "successfully deleted ${CHART_NAME}"
 }
-#-------------------------------------------------------------------------------------------------
-log_header "End tests postgres-xl-docker : ${CHART_NAME}"
 #=================================================================================================
 
 #=================================================================================================
@@ -119,4 +115,6 @@ test_create_schema
 test_create_table
 test_query_data
 delete_chart
+
+log_header "End tests postgres-xl-docker : ${CHART_NAME}"
 #=================================================================================================
