@@ -1,29 +1,41 @@
 #!/bin/bash
 
-SECRETS_FILE="pwd_secret.yaml"
+export CHART_NAME="db-pgb"
+export SECRET_NAME="pgxl-passwords-collection"
+export SECRET_KEY="pgpass"
 PASSWORD="your_password1"
+SECRET_VALUE="$(printf "%s" "${PASSWORD}" | base64)"
+export SECRET_VALUE=$SECRET_VALUE
+
+#=================================================================================================
+# REUSABLE FUNCTIONS
+#-------------------------------------------------------------------------------------------------
+source ./functions.sh
+#=================================================================================================
 
 #=================================================================================================
 # SETUP PGXL
 #-------------------------------------------------------------------------------------------------
-BASE64_PASSWORD=$(printf "${PASSWORD}" | base64)
+YAML_SECRET=$(replace_with_env "$(cat ./secret.yaml)")
+echo "${YAML_SECRET}" | kubectl apply -f -
 
-echo "apiVersion: v1
-kind: Secret
-metadata:
-  name:  pgxl-passwords-collection
-type: Opaque
-data:
-  # You must base64 encode your values. See: https://kubernetes.io/docs/concepts/configuration/secret/
-  pgpass: \"${BASE64_PASSWORD}\"" > "${SECRETS_FILE}"
+mkdir tmp
 
-kubectl apply -f $SECRETS_FILE || exit 1
-helmfile sync || exit 1
+YAML_HELMFILE=$(replace_with_env "$(cat ./helmfile.yaml)")
+echo "${YAML_HELMFILE}" > tmp/helmfile.yaml
+
+YAML_HELM_VALUES=$(replace_with_env "$(cat ./values.yaml)")
+echo "${YAML_HELM_VALUES}" > tmp/values.yaml
+
+cd tmp && helmfile sync || exit 1
+cd ../
+
+rm -rf tmp
 #=================================================================================================
 
 #=================================================================================================
 # SETUP PGBOUNCER
 #-------------------------------------------------------------------------------------------------
-kubectl apply -f pgbouncer-deployment.yaml
-kubectl apply -f pgbouncer-service.yaml
+kubectl apply -f ./pgbouncer/pgbouncer-deployment.yaml
+kubectl apply -f ./pgbouncer/pgbouncer-service.yaml
 #=================================================================================================
