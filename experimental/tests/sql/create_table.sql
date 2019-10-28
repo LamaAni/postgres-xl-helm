@@ -1,0 +1,1 @@
+CREATE TABLE "{{SCHEMA_NAME}}"."{{TABLE_NAME}}" as (SELECT 'the brown rabbit' as col_1);
