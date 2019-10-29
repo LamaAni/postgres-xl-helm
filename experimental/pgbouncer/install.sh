@@ -1,6 +1,8 @@
 #!/bin/bash
 
 export CHART_NAME="db-pgb"
+export PGXL_SERVICE_NAME="${CHART_NAME}-postgres-xl-svc"
+
 export SECRET_NAME="pgxl-passwords-collection"
 export SECRET_KEY="pgpass"
 PASSWORD="your_password1"
@@ -36,6 +38,7 @@ rm -rf tmp
 #=================================================================================================
 # SETUP PGBOUNCER
 #-------------------------------------------------------------------------------------------------
-kubectl apply -f ./pgbouncer/pgbouncer-deployment.yaml
+YAML_PGBOUNCER_DEPLOYMENT=$(replace_with_env "$(cat ./pgbouncer/pgbouncer-deployment.yaml)")
+echo "${YAML_PGBOUNCER_DEPLOYMENT}" | kubectl apply -f -
 kubectl apply -f ./pgbouncer/pgbouncer-service.yaml
 #=================================================================================================

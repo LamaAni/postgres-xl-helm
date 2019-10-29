@@ -3,7 +3,7 @@ $FUNC1$
     BEGIN
         IF NOT EXISTS(SELECT 1 FROM information_schema.schemata WHERE schema_name = 'connection_pool') THEN
             CREATE SCHEMA connection_pool;
-            GRANT USAGE ON SCHEMA connection_pool TO connection_pool;
+            GRANT USAGE ON SCHEMA connection_pool TO postgres;
             CREATE OR REPLACE FUNCTION connection_pool.lookup(INOUT p_user name,
                                                               OUT p_password text)
                 RETURNS record
