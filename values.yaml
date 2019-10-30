@@ -34,7 +34,7 @@ config:
     # append to all datanodes.
     datanode:
     # append to all coordinators.
-    coordinators:
+    coordinator:
 
 security:
   # If exists will load all passwords from secrets.
