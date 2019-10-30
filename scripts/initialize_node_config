@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# Initialize the node configuration.
+cur_path="$(dirname ${BASH_SOURCE[0]})"
+echo "$LOGGING_PREFIX Initializing database on node $PG_NODE"
+
+node_config_file=""
+config_target_file=""
+
+case "$NODE_TYPE" in
+gtm)
+  config_target_file="${PGDATA}/gtm_proxy.conf"
+  node_config_file="/config/config_append_gtm"
+  ;;
+datanode)
+  config_target_file="${PGDATA}/postgresql.conf"
+  node_config_file="/config/config_append_datanode"
+  ;;
+coordinator)
+  config_target_file="${PGDATA}/postgresql.conf"
+  node_config_file="/config/config_append_coordinator"
+  ;;
+proxy)
+  config_target_file="${PGDATA}/gtm_proxy.conf"
+  node_config_file="/config/config_append_proxy"
+  ;;
+*)
+  echo "$LOGGING_PREFIX Node configuration dose not exist for type $NODE_TYPE, error in condfig."
+  exit 1
+  ;;
+esac
+
+cat /config/config_append_internal_global >> $config_target_file
+cat "$node_config_file" >> $config_target_file

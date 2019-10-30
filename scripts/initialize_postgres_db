@@ -34,9 +34,7 @@ if [ ! -f "${PGDATA}/postgresql.conf" ]; then
   export PG_PW_FILE
 
   source "$cur_path/initialize_networks"
-
-  cat /config/pg_config_append >> "${PGDATA}/postgresql.conf"
-  cat /config/config_append >> "${PGDATA}/postgresql.conf"
+  source "$cur_path/initialize_node_config"
 
   echo "$LOGGING_PREFIX Database configuration initialized."
 else

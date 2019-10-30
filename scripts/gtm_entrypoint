@@ -32,6 +32,7 @@ if [ -z "$control_info" ]; then
   cat /config/gtm_config_append >> "${PGDATA}/gtm.conf"
   cat /config/config_append >> "${PGDATA}/gtm.conf"
   source "$cur_path/initialize_networks"
+  source "$cur_path/initialize_node_config"
 
 else
   echo "$LOGGING_PREFIX GTM configuration found, init skipped."
