@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # Initialize the node configuration.
-cur_path="$(dirname ${BASH_SOURCE[0]})"
-echo "$LOGGING_PREFIX Initializing database on node $PG_NODE"
+# cur_path="$(dirname ${BASH_SOURCE[0]})"
+echo "$LOGGING_PREFIX Initializing node configuration for $NODE_TYPE @ $PG_NODE"
 
 node_config_file=""
 config_target_file=""
 
 case "$NODE_TYPE" in
 gtm)
-  config_target_file="${PGDATA}/gtm_proxy.conf"
+  config_target_file="${PGDATA}/gtm.conf"
   node_config_file="/config/config_append_gtm"
   ;;
 datanode)
@@ -29,5 +29,7 @@ proxy)
   ;;
 esac
 
-cat /config/config_append_internal_global >> $config_target_file
-cat "$node_config_file" >> $config_target_file
+cat "/config/config_append_internal_global" >> "$config_target_file" || exit 1
+cat "$node_config_file" >> "$config_target_file" || exit 1
+
+echo "$LOGGING_PREFIX Node configuration added to $config_target_file"
