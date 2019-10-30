@@ -8,9 +8,8 @@ source "$cur_path/initialize_env_dependencies"
 initgtm -D "${PGDATA}" -Z gtm_proxy
 
 # config
-cat /config/gtm_config_append >> "${PGDATA}/gtm_proxy.conf"
-cat /config/config_append >> "${PGDATA}/gtm_proxy.conf"
-source "$cur_path/initialize_networks"
+source "$cur_path/initialize_networks" || exit $?
+source "$cur_path/initialize_node_config" || exit $?
 
 # start the proxy.
 PROXY_ID="$POD_CLUSTER_INDEX"

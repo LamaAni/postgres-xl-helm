@@ -1,0 +1,30 @@
+# yaml anchor
+small_resource_limit: &small_resource_limit
+    limits:
+      memory: "500Mi"
+      cpu: "250m"
+
+gtm:
+  resources: *small_resource_limit
+datanodes:
+  count: 1
+  resources: *small_resource_limit
+coordinators:
+  count: 1
+  resources: *small_resource_limit
+proxies:
+  count: 1
+  enabled: true
+  resources: *small_resource_limit
+
+config:
+  append:
+    gtm: | 
+      # comment to gtm.
+    proxy: |
+      # comment to proxy.
+    datanode: |
+      # comment to datanode.
+    coordinator: | 
+      # comment to coordinator.
+      max_connections = 1000

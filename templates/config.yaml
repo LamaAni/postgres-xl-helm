@@ -8,20 +8,37 @@ metadata:
     app: {{ $app_name }}
     chart: {{ $chart_name }}
 data:
-  config_append: |
+  config_append_internal_global: |
     # applies only on startup.
     listen_addresses = '*'
-{{- if .Values.config.append }}
-{{ .Values.config.append | indent 4 }}
-{{- end }}
 
-  pg_config_append: |
-    # applies only on startup.
-    log_min_messages = {{ lower .Values.config.log_level }}
-
-  gtm_config_append: |
+  config_append_gtm: |
     # applies only on startup.
     log_min_messages = {{ upper .Values.config.log_level }}
+{{- if .Values.config.append.gtm }}
+{{ .Values.config.append.gtm | indent 4 }}
+{{- end }}
+
+  config_append_proxy: |
+    # applies only on startup.
+    log_min_messages = {{ upper .Values.config.log_level }}
+{{- if .Values.config.append.proxy }}
+{{ .Values.config.append.proxy | indent 4 }}
+{{- end }}
+
+  config_append_datanode: |
+    # applies only on startup.
+    log_min_messages = {{ lower .Values.config.log_level }}
+{{- if .Values.config.append.datanode }}
+{{ .Values.config.append.datanode | indent 4 }}
+{{- end }}
+
+  config_append_coordinator: |
+    # applies only on startup.
+    log_min_messages = {{ lower .Values.config.log_level }}
+{{- if .Values.config.append.coordinator }}
+{{ .Values.config.append.coordinator | indent 4 }}
+{{- end }}
 
   host_aliases: | 
     # list of hosts to alias, for datanode and coordinators.

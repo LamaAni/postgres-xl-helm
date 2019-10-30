@@ -25,8 +25,16 @@ config:
   postgres_port: 5432
   # the root user
   postgres_user: postgres
-  # append to the global config file.
+  # Append to the varius config files.
   append:
+    # append to gtm.
+    gtm:
+    # append to all proxies.
+    poxy:
+    # append to all datanodes.
+    datanode:
+    # append to all coordinators.
+    coordinator:
 
 security:
   # If exists will load all passwords from secrets.
