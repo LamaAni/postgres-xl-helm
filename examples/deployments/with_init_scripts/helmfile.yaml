@@ -1,4 +1,4 @@
-# generate a transiant postgres-xl db. This db will 
+# generate a transient postgres-xl db with init scripts. This db will
 # NOT be able to withstand restarts.
 releases:
   - name: test-scripts

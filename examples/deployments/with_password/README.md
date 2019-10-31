@@ -1,6 +1,6 @@
 # Using secrets for password in pgxl
 
-The pgxl chart dose not apply the kubernetes secret, therefore we must first apply that. To apply the secret run:
+The pgxl chart does not apply the kubernetes secret, therefore we must first apply that. To apply the secret run:
 ```shell
 kubectl apply -f ./pwd_secret.yaml
 ```
