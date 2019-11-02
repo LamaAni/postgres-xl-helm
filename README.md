@@ -11,7 +11,7 @@ If using this chart as a database, please make sure you read the sections about 
 
 ### BETA
 
-This chart is in beta. Any contributors welcome. 
+This chart is in beta. Any contributions are welcome. 
 
 # Components overview
 
@@ -19,7 +19,7 @@ See: [Postgres-XL documentation](https://www.postgres-xl.org/documentation/xc-ov
 
 1. [ Global Transaction Manager (GTM) ](https://www.postgres-xl.org/documentation/app-gtm.html) - Single pod StatefulSet - provides transaction management for the entire cluster. The data stored in the GTM is part of the database persistence and should be backed up.
 1. Coordinator - Multi-pod StatefulSet - Database external connections entry point (i.e. where I connect my client to). These pods provide transparent concurrency and integrity of transactions globally. Applications can choose any Coordinator to connect to, they work together. Any Coordinator provides the same view of the database, with the same data, as if it was one PostgreSQL database. The data stored in the coordinator is part of the DB data and should be backed up.
-1. Datanode - Multi-pod StatefulSet - All table data is stored here. A table may be replicated or distributed between datanodes. Since query work is done on the datanodes, the scale and capacity of the db will be determine by the number of datanodes. The data stored in the coordinator is part of the DB data and should be backed up.
+1. Datanode - Multi-pod StatefulSet - All table data is stored here. A table may be replicated or distributed between datanodes. Since query work is done on the datanodes, the scale and capacity of the db will be determined by the number of datanodes. The data stored in the datanode is part of the DB data and should be backed up.
 1. GTM Proxy (optional) - A helper transaction manager. Gtm proxy groups connections and interactions between gtm and other Postgres-XL components to reduce both the number of interactions and the size of messages. Performance tests have shown greater performance with high concurrency workloads as a result.
 
 To connect to the database, please connect to the db main service (which is the coordinator service), example:
@@ -43,11 +43,11 @@ extraLabels | yaml for adding container labels to be added to all the pods | [nu
 config.log_level | The log level to use,  accepts : ERROR, WARNING, INFO, DEBUG, DEBUG1-DEBUG5 | WARNING
 config.managers_port | the port to use for transaction management (GTM or proxies) | 6666
 config.postgres_port | the internal postgres port | 5432
-config.append | A string to append to the end of the postgres config file. | [null]
+config.append.[STS] | A string to append to the end of the postgres config file for a specific StatefulSet. | [null]
 service.port | the external service port | 5432
 service.enabled | if true enables the external load balancer service | true
 service.type | The external service type | LoadBalancer
-security.passwords_secret_name | The kuberntes secret value set to be used for passwords. | [null]
+security.passwords_secret_name | The kubernetes secret value set to be used for passwords. | [null]
 security.pg_password | The superuser postgres password | [null]
 security.postgres_auth_type | The authentication type used | md5
 
@@ -105,18 +105,18 @@ coordinators.pvc:
         storage: 100Mi
 ```
 
-Once these are defined, the DB will recover when any of datanode/coordinator/proxy/gm are restarted.
+Once these are defined, the DB will recover when any of datanode/coordinator/proxy/gtm are restarted.
 
 See more about persistence in Stateful Sets [here](https://kubernetes.io/docs/tutorials/stateful-application/basic-stateful-set/)
 and [here](https://kubernetes.io/docs/concepts/storage/persistent-volumes/).
 
 # Backup and restore
 
-In order to keep to kubernetes principles, this helm chart allows to specify the persistent volume claim class for the workers, coordinators and gm. This data will persist between restarts. The persistent volumes created will be prefixed by `datastore-`
+In order to keep to kubernetes principles, this helm chart allows to specify the persistent volume claim class for the workers, coordinators and gtm. This data will persist between restarts. The persistent volumes created will be prefixed by `datastore-`
 
 Information about StorageClasses can be found [here](https://kubernetes.io/docs/concepts/storage/volumes/)
 
-In the most general, in order to make a copy of the database one must copy all the data of each and every coordinator and data nods. This means that, when relaying on this type of persistence one must:
+In order to make a copy of the database one must copy all the data of each and every coordinator and datanode. This means that, when relying on this type of persistence one must:
 
 1. Create a backup solution using a specified [ persistent storage class](https://kubernetes.io/docs/concepts/storage/storage-classes/), and allow the backend to keep copies of the data between restarts. 
 1. You CANNOT decrease the number of executing datanodes and coordinators otherwise data will be lost. Scaling up may require the redistribution of tables, information about such operations can be found [here]().
@@ -131,7 +131,7 @@ In the most general, in order to make a copy of the database one must copy all t
 
 For the current beta phase, a pod will be considered healthy if it can pass,
 1. pg_isready.
-2. Connect to the gtm, datanodes (all), coordinators (all).
+2. Connect to the gtm, datanodes (all), and coordinators (all).
 
 # Some other notes
 
@@ -143,8 +143,8 @@ Benchmarks:
 
 # Caveats
 
-The data in the DB will persist only when all datanodes, coordinators and gm disks are safely restored. This helm 
-chart dose not deal with partial restores.
+The data in the DB will persist only when all datanodes, coordinators and gtm disks are safely restored. This helm 
+chart does not deal with partial restores.
 
 # Licence
 

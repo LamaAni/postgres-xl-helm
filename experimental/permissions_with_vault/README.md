@@ -1,5 +1,11 @@
 # THIS SCRIPT IS HIGHLY EXPERIMENTAL!
 
+Please note this is only here temporarily. It is used as a basis for the pgbouncer_with_vault example and will eventually be removed.
+
+- This example creates a transient deployment which will not persist between restarts.
+- Then it deploys the consul chart which is required for vault https://github.com/hashicorp/consul-helm.
+- Then it deploys the vault chart https://github.com/hashicorp/vault-helm and sets up a policy for use.
+
 # INSTALL
 
 To test install use the below.
