@@ -16,3 +16,5 @@ releases:
       - envs:
           CONNECTION_POOL_CREATE_PGSHADOW_LOOKUP: |-
 {{ readFile "../sql/connection-pool-create-pgshadow-lookup.sql" | indent 12 }}
+          CLEAN_CONNECTIONS_TO_TEMPLATE1: |-
+{{ readFile "../sql/clean_connections_to_template1.sql" | indent 12 }}

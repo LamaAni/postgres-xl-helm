@@ -1,7 +1,7 @@
-# generate a persistant postgres-xl db. This db will 
+# generate a persistent postgres-xl db. This db will
 # be able to withstand restarts.
 releases:
-  - name: persistant
+  - name: persistent
     # Use of a specific relaease. 
     # chart: https://github.com/LamaAni/postgres-xl-helm/archive/0.5.0.tar.gz
     # Chart in directory

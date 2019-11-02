@@ -43,4 +43,4 @@ on_load:
     - name: connection_pool_create_pgshadow_lookup_template1.sh
       script: |-
         psql -d template1 -c "$CONNECTION_POOL_CREATE_PGSHADOW_LOOKUP"
-        psql -c "CLEAN CONNECTION TO ALL FOR template1;"
+        psql -c "$CLEAN_CONNECTIONS_TO_TEMPLATE1"
