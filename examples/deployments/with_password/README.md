@@ -1,4 +1,4 @@
-# Using secrets for password in pgxl
+# Transient example deployment using kubernetes secret to create password
 
 The pgxl chart does not apply the kubernetes secret, therefore we must first apply that. To apply the secret run:
 ```shell
