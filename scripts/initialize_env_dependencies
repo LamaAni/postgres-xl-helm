@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 # Initializes the env variables in the pod,
 # depending on pod type.
+cur_path="$(dirname ${BASH_SOURCE[0]})"
+source "$cur_path/common.sh"
+
 POD_INDEX=$(echo "$POD_NAME" | grep -Eo "[0-9]+\s*$")
 export POD_INDEX
 
@@ -24,7 +27,7 @@ if [ -z "$PG_NODE" ]; then
     ;;
     *)
       if [ -n "$NODE_TYPE" ]; then
-        echo "$LOGGING_PREFIX Cluster node cannot be defined for type $NODE_TYPE, skipping"
+        log:warning "Cluster node type not recognized '$NODE_TYPE', skipping env initialization"
       fi
     ;;
   esac

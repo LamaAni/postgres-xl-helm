@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 # Coordinator initialization script
-echo "$LOGGING_PREFIX Starting postgres as datanode"
 cur_path="$(dirname ${BASH_SOURCE[0]})"
+source "$cur_path/common.sh"
+log:info "Starting postgres as coordinator"
+
+# initialize dependecies.
 source "$cur_path/initialize_env_dependencies" || exit $?
 
 # connecting to cluster.
