@@ -2,39 +2,36 @@
 # deployment to be tested on local systems.
 # Recommended values can be found in README and 
 # in the values file in this chart.
+
+small_resource_limit: &small_resource_limit
+  limits:
+    memory: "500Mi"
+    cpu: "250m"
+
 gtm:
-  resources:
-    limits:
-      memory: "500Mi"
-      cpu: "250m"
+  resources: *small_resource_limit
   pvc:
     resources:
       requests:
         storage: 100Mi
-datanodes:
-  count: 2
-  resources:
-    limits:
-      memory: "500Mi"
-      cpu: "250m"
-  pvc:
-    resources:
-      requests:
-        storage: "4Gi"
+
 coordinators:
   count: 2
-  resources:
-    limits:
-      memory: "500Mi"
-      cpu: "250m"
+  resources: *small_resource_limit
   pvc:
     resources:
         requests:
           storage: 100Mi
 proxies:
-  resources:
-    limits:
-      memory: "500Mi"
-      cpu: "250m"
+  resources: *small_resource_limit
   count: 1
   enabled: true
+
+# this is the costly bit.
+datanodes:
+  count: 2
+  resources: *small_resource_limit
+  pvc:
+    resources:
+      requests:
+        storage: "4Gi"
