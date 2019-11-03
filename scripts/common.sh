@@ -31,7 +31,7 @@ logging_core_print() {
 
   local log_type_prefex_env_name="LOGGING_${log_type}_PREFEX"
   log_type_prefex="${!log_type_prefex_env_name}"
-  
+
   if [ "$LOGGING_SHOW_COLORS" != "true" ]; then
     echo "$LOGGING_PREFIX$log_type_prefex " "$@"
   else
@@ -63,9 +63,17 @@ function log:script() {
   logging_core_print "SCRIPT" "$@"
 }
 
+function print_bash_error_stack(){
+  for ((i=1;i<${#FUNCNAME[@]}-1;i++)); do
+      local fpath="$(realpath ${BASH_SOURCE[$i+1]})"
+      log:error "$i: $fpath:${BASH_LINENO[$i]} @ ${FUNCNAME[$i]}"
+  done
+}
+
 function assert() {
   if [ "$1" -ne 0 ]; then
     log:error "$2"
+    print_bash_error_stack
     return "$1"
   fi
 }
