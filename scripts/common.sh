@@ -12,14 +12,15 @@
 
 # Methods and functions to be used in all other scripts.
 : ${LOGGING_SHOW_COLORS:="true"}
-: ${LOGGING_INFO_COLOR:="\e[0;32m"}
+: ${LOGGING_INFO_PREFEX_COLOR:="\e[0;32m"}
 : ${LOGGING_INFO_PREFEX:=":INFO"}
-: ${LOGGING_ERROR_COLOR:="\e[0;31m"}
+: ${LOGGING_ERROR_PREFEX_COLOR:="\e[0;31m"}
 : ${LOGGING_ERROR_PREFEX:=":ERROR"}
-: ${LOGGING_WARNING_COLOR:="\e[0;33m"}
+: ${LOGGING_WARNING_PREFEX_COLOR:="\e[0;33m"}
 : ${LOGGING_WARNING_PREFEX:=":WARNING"}
-: ${LOGGING_SCRIPT_PREFEX:=":SCRIPT"}
-: ${LOGGING_SCRIPT_COLOR:="\e[0;35m"}
+: ${LOGGING_SCRIPT_PREFEX:=":INFO"}
+: ${LOGGING_SCRIPT_PREFEX_COLOR:="\e[0;36m"}
+: ${LOGGING_SCRIPT_TEXT_COLOR:="\e[0;35m"}
 
 # TODO: Apply common format for stackdriver.
 logging_core_print() {
@@ -28,15 +29,20 @@ logging_core_print() {
   # remove the first argument.
   shift
 
-  local log_color_env_name="LOGGING_${log_type}_COLOR"
   local log_type_prefex_env_name="LOGGING_${log_type}_PREFEX"
-  log_color="${!log_color_env_name}"
   log_type_prefex="${!log_type_prefex_env_name}"
-
+  
   if [ "$LOGGING_SHOW_COLORS" != "true" ]; then
     echo "$LOGGING_PREFIX$log_type_prefex " "$@"
   else
-    echo -e "$log_color$LOGGING_PREFIX$log_type_prefex$reset_color" "$@"
+    local log_prefex_color_env_name="LOGGING_${log_type}_PREFEX_COLOR"
+    local log_text_color_env_name="LOGGING_${log_type}_TEXT_COLOR"
+    log_prefex_color="${!log_prefex_color_env_name}"
+    log_text_color="${!log_text_color_env_name}"
+
+    if [ -z "$log_text_color" ]; then log_text_color="$reset_color"; fi
+
+    echo -e "$log_prefex_color$LOGGING_PREFIX$log_type_prefex$log_text_color" "$@" "$reset_color"
   fi
 }
 

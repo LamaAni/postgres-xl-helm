@@ -50,16 +50,18 @@ function run_scripts_that_match() {
 
   for fpath in "${scripts[@]}"; do
     is_found=1
-    log:info "Executing script $fpath:"
+    
     local fname=$(basename "$fpath")
     local fileext=${fname##*.}
 
     case $fileext in
     sh)
+      log:info "Executing bash script $fpath:"
       "$fpath"
       assert $? "Failed when executing init script file $fpath. Exiting... " || return $?
       ;;
     sql)
+      log:info "Calling psql to execute script in $fpath:"
       local sql_script=""
       sql_script=$(cat "$fpath")
       psql -c "$sql_script"
