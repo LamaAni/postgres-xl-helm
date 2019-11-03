@@ -61,7 +61,7 @@ function register_node() {
   local sql_script="$cmd NODE $node_name WITH (TYPE = '$type', HOST = '$node_host', PORT = $PG_PORT);"
   log:script "$sql_script"
   psql -c "$sql_script"
-  assert_warn $? "Failed executing sql script. Is node already defined? continue to next node"
+  assert_warn $? "Failed executing sql script. Is node already defined? Node register skipped."
 }
 
 function main(){
