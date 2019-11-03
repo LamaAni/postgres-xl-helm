@@ -1,23 +1,17 @@
-# yaml anchor
-small_resource_limit: &small_resource_limit
-  limits:
-    memory: "500Mi"
-    cpu: "250m"
-
 image: sstubbs/pgxl:latest
 
 gtm:
-  resources: *small_resource_limit
+  resources: null
 datanodes:
   count: 1
-  resources: *small_resource_limit
+  resources: null
 coordinators:
   count: 1
-  resources: *small_resource_limit
+  resources: null
 proxies:
   count: 1
   enabled: true
-  resources: *small_resource_limit
+  resources: null
 
 security:
   passwords_secret_name: {{SECRET_NAME}}
@@ -32,11 +26,8 @@ on_load:
   # it right away.
   back_off_limit: 1
   enabled: true
-  resources: *small_resource_limit
+  resources: null
   init:
-    - name: wait_for_connection.sh
-      script: |-
-        sleep 5
     - name: connection_pool_create_base_user.sh
       script: |-
         psql -c "$CONNECTION_POOL_CREATE_BASE_USER"

@@ -9,7 +9,7 @@ PASSWORD="your_password1"
 SECRET_VALUE="$(printf "%s" "${PASSWORD}" | base64)"
 export SECRET_VALUE=$SECRET_VALUE
 
-SINGLE_NODE_CLUSTER="true"
+SINGLE_NODE_CLUSTER="false"
 CONSUL_NAME="consul"
 export VAULT_NAME="vault"
 #=================================================================================================
@@ -36,25 +36,23 @@ cd tmp && helmfile sync || exit 1
 cd ../
 
 rm -rf tmp
+
+kubectl wait --for=condition=ready pod -l "app=${CHART_NAME}-postgres-xl" --timeout=180s
 #=================================================================================================
 
 #=================================================================================================
 # SETUP CONSUL
 #-------------------------------------------------------------------------------------------------
-git clone --single-branch --branch v0.9.0 https://github.com/hashicorp/consul-helm.git
+git clone --single-branch --branch v0.12.0 https://github.com/hashicorp/consul-helm.git
 # Turns off affinity if one node cluster is set to true for testing purposes
+sed -i "" "s/storage: 10Gi/storage: 1Gi/g" consul-helm/values.yaml
 if [ "${SINGLE_NODE_CLUSTER}" = "true" ]; then
   sed -i '/affinity: |/,+8 s/^/#/' consul-helm/values.yaml
 fi
 helm install "${CONSUL_NAME}" ./consul-helm
 rm -rf consul-helm
-#=================================================================================================
 
-#=================================================================================================
-# WAIT FOR PGXL AND CONSUL
-#-------------------------------------------------------------------------------------------------
-kubectl wait --for=condition=ready pod -l "app=${CHART_NAME}-postgres-xl" --timeout=60s
-kubectl wait --for=condition=ready pod -l "app=${CONSUL_NAME}" --timeout=60s
+kubectl wait --for=condition=ready pod -l "app=${CONSUL_NAME}" --timeout=180s
 #=================================================================================================
 
 #=================================================================================================
@@ -65,36 +63,37 @@ git clone --single-branch --branch master https://github.com/hashicorp/vault-hel
 if [ "${SINGLE_NODE_CLUSTER}" = "true" ]; then
   sed -i '/affinity: |/,+8 s/^/#/' vault-helm/values.yaml
 fi
-sed -i "s/HOST_IP:8500/${CONSUL_NAME}-consul-server:8500/g" vault-helm/values.yaml
+sed -i "" "s/HOST_IP:8500/${CONSUL_NAME}-consul-server:8500/g" vault-helm/values.yaml
+sed -i "" "s/readOnlyRootFilesystem: true/readOnlyRootFilesystem: false/g" vault-helm/values.yaml
 helm install "${VAULT_NAME}" ./vault-helm --set='server.ha.enabled=true'
 rm -rf vault-helm
 
-sleep 15
+sleep 30
 
-INIT_OUTPUT=$(kubectl exec -it "${VAULT_NAME}-0" -- vault operator init -n 1 -t 1)
+INIT_OUTPUT=$(kubectl exec "${VAULT_NAME}-0" -- vault operator init -n 1 -t 1)
 
-sleep 15
+sleep 30
 
 UNSEAL_KEY=$(echo "${INIT_OUTPUT}" | grep 'Unseal Key 1:' | cut -d" " -f4)
-UNSEAL_KEY=$(sed 's/\x1b\[[0-9;]*m//g' <<<"${UNSEAL_KEY}") # remove ansi colour ^[[0m^M
+UNSEAL_KEY=$(sed "s,$(printf '\033')\\[[0-9;]*[a-zA-Z],,g" <<<"${UNSEAL_KEY}") # remove ansi colour ^[[0m^M
 ROOT_TOKEN=$(echo "${INIT_OUTPUT}" | grep 'Initial Root Token:' | cut -d" " -f4)
-ROOT_TOKEN=$(sed 's/\x1b\[[0-9;]*m//g' <<<"${ROOT_TOKEN}") # remove ansi colour ^[[0m^M
+ROOT_TOKEN=$(sed "s,$(printf '\033')\\[[0-9;]*[a-zA-Z],,g" <<<"${ROOT_TOKEN}") # remove ansi colour ^[[0m^M
 
-kubectl exec -it "${VAULT_NAME}-0" -- vault operator unseal "${UNSEAL_KEY}"
-kubectl exec -it "${VAULT_NAME}-1" -- vault operator unseal "${UNSEAL_KEY}"
-kubectl exec -it "${VAULT_NAME}-2" -- vault operator unseal "${UNSEAL_KEY}"
+kubectl exec "${VAULT_NAME}-0" -- vault operator unseal "${UNSEAL_KEY}"
+kubectl exec "${VAULT_NAME}-1" -- vault operator unseal "${UNSEAL_KEY}"
+kubectl exec "${VAULT_NAME}-2" -- vault operator unseal "${UNSEAL_KEY}"
 
 kubectl wait --for=condition=ready pod -l "app.kubernetes.io/name=${VAULT_NAME}" --timeout=60s
 
-kubectl exec -it "${VAULT_NAME}-0" -- vault login "${ROOT_TOKEN}"
+kubectl exec "${VAULT_NAME}-0" -- vault login "${ROOT_TOKEN}"
 #=================================================================================================
 
 #=================================================================================================
 # CONFIGURE VAULT PGXL ENDPOINT
 #-------------------------------------------------------------------------------------------------
-kubectl exec -it "${VAULT_NAME}-0" -- vault secrets enable database
+kubectl exec "${VAULT_NAME}-0" -- vault secrets enable database
 ALLOWED_VAULT_ROLES="$(printf %s "$(ls ./vault/roles | awk -F. '{print $1}')" | tr '\n' ',')"
-kubectl exec -it "${VAULT_NAME}-0" -- vault write database/config/postgres \
+kubectl exec "${VAULT_NAME}-0" -- vault write database/config/postgres \
   plugin_name=postgresql-database-plugin \
   allowed_roles="${ALLOWED_VAULT_ROLES}" \
   connection_url="postgresql://{{username}}:{{password}}@${PGXL_SERVICE_NAME}:5432/postgres?sslmode=disable" \
@@ -114,7 +113,7 @@ done
 # Apply all policies from ./vault/policies directory
 ls ./vault/policies | while read -r fname
 do
-  kubectl exec -it "${VAULT_NAME}-0" -- sh -c "echo '$(cat "./vault/policies/${fname}")' > ~/${fname}; vault policy write ${fname%%.*} ~/${fname};"
+  kubectl exec "${VAULT_NAME}-0" -- sh -c "echo '$(cat "./vault/policies/${fname}")' > ~/${fname}; vault policy write ${fname%%.*} ~/${fname};"
 done
 #=================================================================================================
 
@@ -133,13 +132,13 @@ SA_CA_CRT=$(
   echo
 )
 K8S_HOST=$(kubectl exec "${CONSUL_NAME}-consul-server-0" -- sh -c 'echo $KUBERNETES_SERVICE_HOST')
-kubectl exec -it "${VAULT_NAME}-0" -- vault auth enable kubernetes
-kubectl exec -it "${VAULT_NAME}-0" -- vault write auth/kubernetes/config \
+kubectl exec "${VAULT_NAME}-0" -- vault auth enable kubernetes
+kubectl exec "${VAULT_NAME}-0" -- vault write auth/kubernetes/config \
   token_reviewer_jwt="${SA_JWT_TOKEN}" \
   kubernetes_host="https://${K8S_HOST}:443" \
   kubernetes_ca_cert="${SA_CA_CRT}"
 ALLOWED_VAULT_POLICIES="$(printf %s "$(ls ./vault/policies | awk -F. '{print $1}')" | tr '\n' ',')"
-kubectl exec -it "${VAULT_NAME}-0" -- vault write auth/kubernetes/role/postgres \
+kubectl exec "${VAULT_NAME}-0" -- vault write auth/kubernetes/role/postgres \
   bound_service_account_names=postgres-vault \
   bound_service_account_namespaces=default \
   policies="${ALLOWED_VAULT_POLICIES}" \

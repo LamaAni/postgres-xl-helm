@@ -15,7 +15,7 @@ CONNECTION_POOL_ROLE_CREATION=(
 
 CONNECTION_POOL_ROLE_CREATION_JSON=$(json_array "${CONNECTION_POOL_ROLE_CREATION[@]}")
 
-kubectl exec -it "${VAULT_NAME}-0" -- vault write database/roles/connection-pool-role \
+kubectl exec "${VAULT_NAME}-0" -- vault write database/roles/connection-pool-role \
   db_name=postgres \
   creation_statements="${CONNECTION_POOL_ROLE_CREATION_JSON}" \
   default_ttl="1h" \
