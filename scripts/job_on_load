@@ -41,12 +41,15 @@ function run_scripts_that_match() {
   local pattern="$1"
   local src_path="$(realpath "$2")"
 
-  log:info "Finding scripts that match pattern '$pattern' in folder '$src_path'"
+  log:info "Searching for and executing scripts that match pattern '$pattern' in folder '$src_path'"
   local scripts=""
   scripts="$(find "$src_path" -maxdepth 1 -name "$pattern" | sort)"
   scripts=($scripts)
 
+  local is_found=0
+
   for fpath in "${scripts[@]}"; do
+    is_found=1
     log:info "Executing script $fpath:"
     local fname=$(basename "$fpath")
     local fileext=${fname##*.}
@@ -67,10 +70,16 @@ function run_scripts_that_match() {
       ;;
     esac
   done
+
+  if [ $is_found -eq 0 ]; then
+    log:info "No scripts found."
+  else
+    log:info "Done."
+  fi
 }
 
 pg_isready
-assert $? "Database Port is ready but cannot connect to remote database @" "$EXTERNAL_SERVICE:$PG_PORT" || exit $?
+assert $? "Database Port is ready but database is not (pg_isready failed) @" "$EXTERNAL_SERVICE:$PG_PORT" || exit $?
 
 is_initialized
 db_already_initialized=$?
