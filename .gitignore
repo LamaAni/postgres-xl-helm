@@ -2,3 +2,4 @@ kube
 print.yaml
 local_deployments/
 .idea
+.vscode/
