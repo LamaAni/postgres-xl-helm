@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+cur_path="$(dirname ${BASH_SOURCE[0]})"
+source "$cur_path/common.sh"
+
 # check all proxies are connected.
 for i in $(seq 0 $PROXY_COUNT); do 
 
@@ -9,8 +12,5 @@ for i in $(seq 0 $PROXY_COUNT); do
   node_host="${node_full_name}.${PROXY_SERVICE}"
 
   nc -zv "$node_host" $PG_GTM_PORT &> /dev/null
-  if [ $? -ne 0 ]; then
-    echo "$LOGGING_PREFIX Cluster not ready, failed to connect to proxy at $node_host" >> /dev/stderr
-    exit 1
-  fi
+  assert $? "Cluster not ready, failed to connect to proxy at $node_host" >> /dev/stderr || exit $?
 done

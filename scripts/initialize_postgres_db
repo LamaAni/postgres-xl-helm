@@ -1,25 +1,27 @@
 #!/usr/bin/env bash
 # Initialize the postgres database.
 cur_path="$(dirname ${BASH_SOURCE[0]})"
-echo "$LOGGING_PREFIX Initializing database on node $PG_NODE"
+source "$cur_path/common.sh"
+log:info "Initializing database on node $PG_NODE"
 
 if [ "$RESET_DB" == "true" ] && [ -d "${PGDATA}" ]; then
   rm -R "${PGDATA}"
 fi
 
 if [ ! -f "${PGDATA}/postgresql.conf" ]; then
-  echo "$LOGGING_PREFIX Database configuration not found, calling initdb"
+  log:info "Database configuration not found, calling initdb"
 
   PG_PW_FILE=""
 
   if [ -z "$PGPASSWORD" ]; then
-    echo "$LOGGING_PREFIX WARNING: Database superuser password not found, DB is insecure."
+    log:warning "Database superuser password not found, DB is insecure."
     initdb \
       -D "${PGDATA}" \
       -U "${PGUSER}" \
-      --nodename="${PG_NODE}" || exit $?
+      --nodename="${PG_NODE}"
+      assert $? "Postgres init db failed, postgres database cannot be started." || exit $?
   else
-    echo "$LOGGING_PREFIX Database superuser password found, initializing db with password."
+    log:info "Database superuser password found, initializing db with password."
     PG_PW_FILE="/tmp/$(mktemp pgpass-XXXXX.pwd)"
     echo "${PGPASSWORD}" > "$PG_PW_FILE"
 
@@ -28,7 +30,8 @@ if [ ! -f "${PGDATA}/postgresql.conf" ]; then
       -D "${PGDATA}" \
       -U "${PGUSER}" \
       --nodename="${PG_NODE}" \
-      --pwfile="${PG_PW_FILE}" || exit $?
+      --pwfile="${PG_PW_FILE}"
+    assert $? "Postgres init db failed, postgres database cannot be started." || exit $?
   fi
 
   export PG_PW_FILE
@@ -36,23 +39,25 @@ if [ ! -f "${PGDATA}/postgresql.conf" ]; then
   source "$cur_path/initialize_networks" || exit $?
   source "$cur_path/initialize_node_config" || exit $?
 
-  echo "$LOGGING_PREFIX Database configuration initialized."
+  log:info "Database configuration initialized."
 else
-  echo "$LOGGING_PREFIX Database configuration found, init skipped."
+  log:info "Database configuration found, init skipped."
 fi
 
 # required for postgrs permissions.
 # the loaded values are actually set by kuberntes. :(
-echo "$LOGGING_PREFIX Set data folder permissions 0700"
+log:info "Set data folder permissions 0700"
 chmod -R 0700 ${PGDATA}
+assert $? "Failed to change data folder permissions" || exit $?
 
 # check for proxy.
 if [ "$PROXY_ENABLED" = "true" ]; then
   export PG_GTM_HOST="$PROXY_SERVICE"
-  echo "$LOGGING_PREFIX looking for GTM proxy host @ $PG_GTM_HOST..."
+  log:info "looking for GTM proxy host @ $PG_GTM_HOST..."
 else
-  echo "$LOGGING_PREFIX looking for GTM host @ $PG_GTM_HOST..."
+  log:info "looking for GTM host @ $PG_GTM_HOST..."
 fi
 
 # waiting for GTM.
-"$cur_path/wait_for_connection" "$PG_GTM_HOST" "$PG_GTM_PORT" || exit $?
+"$cur_path/wait_for_connection" "$PG_GTM_HOST" "$PG_GTM_PORT"
+assert $? "Error while waiting for connection. Deployment not ready." || exit $?

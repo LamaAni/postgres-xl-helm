@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
 # Check if postgres is alive.
 
-pg_isready || exit 1
+cur_path="$(dirname ${BASH_SOURCE[0]})"
+source "$cur_path/common.sh"
+
+pg_isready
+assert $? "Postgres is not ready" >> /dev/stderr || exit $?

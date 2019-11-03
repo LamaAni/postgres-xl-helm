@@ -3,12 +3,15 @@
 # since we are in kuberntes, the assumption is the current
 # network is a trusted network.
 
+cur_path="$(dirname ${BASH_SOURCE[0]})"
+source "$cur_path/common.sh"
+
 export PG_AUTH_METHOD="trust"
 if [ -n "$PGPASSWORD" ]; then
   PG_AUTH_METHOD="${AUTH_TYPE}"
-  echo "$LOGGING_PREFIX Added network config to allow password protected connections."
+  log:info "Added network config to allow password protected connections."
 else 
-  echo "$LOGGING_PREFIX WARNING: Superuser password not found, set config to allow all connection."
+  log:warning "Superuser password not found, all connections will be allowed!"
 fi
 
 echo "host all all all $PG_AUTH_METHOD" >> "${PGDATA}/pg_hba.conf"

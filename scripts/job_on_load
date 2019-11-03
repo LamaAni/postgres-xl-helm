@@ -1,22 +1,15 @@
 #!/usr/bin/env bash
 
 cur_path="$(dirname ${BASH_SOURCE[0]})"
+source "$cur_path/common.sh"
 
 function log() {
   echo "$LOGGING_PREFIX" "$@"
 }
 
-function assert() {
-  if [ "$1" -ne 0 ]; then
-    log "ERROR: " "$@"
-    return $1
-  fi
-  return 0
-}
-
-log "Waiting for database to be ready..."
+log:info "Waiting for database to be ready..."
 "$cur_path/wait_for_connection" "$EXTERNAL_SERVICE" "$PG_PORT"
-assert $? "ERRROR: Failed while waiting for database service to start." || exit $?
+assert $? "Aborted, timed out while waiting for database to be ready @" "$EXTERNAL_SERVICE:$PG_PORT" || exit $?
 
 function is_initialized() {
   local dose_state_table_exist=""
@@ -48,54 +41,56 @@ function run_scripts_that_match() {
   local pattern="$1"
   local src_path="$(realpath "$2")"
 
-  log "Finding scripts that match pattern '$pattern' in folder '$src_path'"
+  log:info "Finding scripts that match pattern '$pattern' in folder '$src_path'"
   local scripts=""
   scripts="$(find "$src_path" -maxdepth 1 -name "$pattern" | sort)"
   scripts=($scripts)
 
   for fpath in "${scripts[@]}"; do
-    log "Executing script $fpath:"
+    log:info "Executing script $fpath:"
     local fname=$(basename "$fpath")
     local fileext=${fname##*.}
 
     case $fileext in
     sh)
-      source "$fpath"
-      assert $? "ERROR: Error while executing init script file $fpath. Exiting... " || return $?
+      chmod +x "$fpath"
+      assert $? "Failed to set executable permissions on $fpath" 
+      "$fpath"
+      assert $? "Failed when executing init script file $fpath. Exiting... " || return $?
       ;;
     sql)
       local sql_script=""
       sql_script=$(cat "$fpath")
       psql -c "$sql_script"
-      assert $? "ERROR: Error while executing init script file $fpath. Exiting... " || return $?
+      assert $? "Failed when executing init script file $fpath. Exiting... " || return $?
       ;;
     *)
-      assert 1 "ERROR: Cannot invoke filename with extention $fileext, skipping. Allowed [sql, sh]"
+      log:warning "Cannot invoke filename with extension $fileext, skipping. Allowed extensions [sql, sh]"
       ;;
     esac
   done
 }
 
 pg_isready
-assert $? "Cannot connect to remote database" || exit $?
+assert $? "Database Port is ready but cannot connect to remote database @" "$EXTERNAL_SERVICE:$PG_PORT" || exit $?
 
 is_initialized
 db_already_initialized=$?
 
 if [ $db_already_initialized -eq 0 ]; then
-  log "Database has not been initialized, calling init scripts.."
+  log:info "Database has not been initialized, calling init scripts.."
 
-  log "Invoking init scripts.."
+  log:info "Invoking init scripts.."
   run_scripts_that_match "init_*" "/load_scripts"
   assert $? "Initialization scripts failed, exiting." || exit $?
 
-  log "Creating db postgres-xl-helm state tables"
+  log:info "Creating db postgres-xl-helm state tables"
   initialize_pgxl_state
   assert $? "Failed to initialize database for postgres-xl helm chart state." || exit $?
 else
-  log "Database already initialized. Skipping init scripts."
+  log:info "Database already initialized. Skipping init scripts."
 fi
 
-log "Invoking startup scripts.."
+log:info "Invoking startup scripts.."
 run_scripts_that_match "startup_*" "/load_scripts"
 assert $? "Startup scripts failed, exiting." || exit $?
