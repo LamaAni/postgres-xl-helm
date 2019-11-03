@@ -24,7 +24,7 @@
 # TODO: Apply common format for stackdriver.
 logging_core_print() {
   local log_type="$1"
-  local reset_color="\e[39m"
+  local reset_color="\e[0m"
   # remove the first argument.
   shift
 

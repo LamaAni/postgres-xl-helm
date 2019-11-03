@@ -53,8 +53,6 @@ function run_scripts_that_match() {
 
     case $fileext in
     sh)
-      chmod +x "$fpath"
-      assert $? "Failed to set executable permissions on $fpath" 
       "$fpath"
       assert $? "Failed when executing init script file $fpath. Exiting... " || return $?
       ;;
