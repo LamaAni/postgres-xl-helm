@@ -2,27 +2,21 @@
 # deployment to be tested on local systems.
 # Recommended values can be found in README and 
 # in the values file in this chart.
+
+small_resource_limit: &small_resource_limit
+  limits:
+    memory: "500Mi"
+    cpu: "250m"
+
 gtm:
-  resources:
-    limits:
-      memory: "500Mi"
-      cpu: "250m"
+  resources: *small_resource_limit
 datanodes:
   count: 2
-  resources:
-    limits:
-      memory: "500Mi"
-      cpu: "250m"
+  resources: *small_resource_limit
 coordinators:
   count: 2
-  resources:
-    limits:
-      memory: "500Mi"
-      cpu: "250m"
+  resources: *small_resource_limit
 proxies:
-  resources:
-    limits:
-      memory: "500Mi"
-      cpu: "250m"
+  resources: *small_resource_limit
   count: 1
   enabled: true
