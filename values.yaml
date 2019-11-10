@@ -36,6 +36,22 @@ config:
     # append to all coordinators.
     coordinator:
 
+# applies only to datanodes. Coordinators 
+# are not stored, and are only considered part
+# of the cluster configuration.
+WAL:
+  archive:
+    # enable wal archiving.
+    enable: false
+    # default value for versions.
+    # TODO: add WAL auto versioning on datanode init
+    # will allow restore points.
+    version: "unversioned"
+    # will default to storage.
+    storage_path: /wal_archive
+    # if dose not exist will default to empty folder.
+    pvc:
+
 security:
   # If exists will load all passwords from secrets.
   passwords_secret_name:

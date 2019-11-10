@@ -1,0 +1,15 @@
+# generate a transient postgres-xl db with username and password. This db will
+# NOT be able to withstand restarts.
+releases:
+  - name: tran-with-archive
+    # Use of a specific relaease. 
+    # chart: https://github.com/LamaAni/postgres-xl-helm/archive/0.5.0.tar.gz
+    # Chart in directory
+    chart: ../../../
+    values:
+      - ./values.yaml
+      # can also added inline, example:
+      # - datanodes:
+      #     count: 4  
+      #   coordinators:
+      #     count: 2

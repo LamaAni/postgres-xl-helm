@@ -21,6 +21,9 @@ data:
   # the user authentication type 
   AUTH_TYPE: {{ .Values.security.postgres_auth_type }}
 
+  # the wal archive directory. Can be overriden.
+  WAL_ARCHIVE_PATH: "{{ .Values.homedir }}/wal_archive/{{ .Values.WAL.archive.version }}"
+
   # Added envs. These will not affect the db operation.
   {{- if .Values.envs }}
 {{ toYaml .Values.envs | indent 2}}

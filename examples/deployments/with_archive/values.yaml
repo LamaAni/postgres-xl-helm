@@ -1,0 +1,33 @@
+# used limited resources to allow this
+# deployment to be tested on local systems.
+# Recommended values can be found in README and 
+# in the values file in this chart.
+
+small_resource_limit: &small_resource_limit
+  limits:
+    memory: "500Mi"
+    cpu: "250m"
+
+datanodes:
+  count: 1
+  resources: *small_resource_limit
+coordinators:
+  count: 1
+  resources: *small_resource_limit
+proxies:
+  count: 1
+  resources: *small_resource_limit
+  enabled: true
+
+WAL:
+  archive:
+    enable: true
+    # the version of the archive. Can have multiple versions to allow backup 
+    # and restore from these versions.
+    version: "kka"
+    # use this pvc to allow archiving to be stored over restart.
+    # note that data may be overriden if the db is not up to date.
+    pvc:
+      resources:
+        requests:
+          storage: 1Gi
