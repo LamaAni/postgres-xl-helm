@@ -27,7 +27,7 @@ WAL:
     version: "kka"
     # use this pvc to allow archiving to be stored over restart.
     # note that data may be overriden if the db is not up to date.
-    pvc:
-      resources:
-        requests:
-          storage: 1Gi
+    # pvc:
+    #   resources:
+    #     requests:
+    #       storage: 1Gi
