@@ -58,7 +58,7 @@ spec:
         image: "{{ default .Values.image $config_col.image }}"
         command:
           - bash
-          - /entry/job_on_load
+          - /scripts/job_on_load
         envFrom:
         - configMapRef:
             name: {{$app_name}}-envs
@@ -82,7 +82,7 @@ spec:
           - name: {{$app_name}}-load-scripts
             mountPath: /load_scripts
           - name: {{$app_name}}-scripts
-            mountPath: /entry
+            mountPath: /scripts
 {{- if $config_col.volumeMounts }}
 {{ toYaml $config_col.volumeMounts | indent 10 }}
 {{- end }}
