@@ -83,17 +83,17 @@ spec:
             name: pg
         command:
           - bash
-          - /entry/coordinator_entrypoint
+          - /scripts/coordinator_entrypoint
         readinessProbe:
           exec:
             command:
-            - /entry/probe_readiness_coordinator
+            - /scripts/probe_readiness_coordinator
           initialDelaySeconds: 5
           periodSeconds: 5
         livenessProbe:
           exec:
             command:
-            - /entry/probe_liveness_postgres
+            - /scripts/probe_liveness_postgres
           initialDelaySeconds: 30
           periodSeconds: 5
         resources:
@@ -117,7 +117,7 @@ spec:
 {{- include "print_password_envs" . | indent 10 }}
         volumeMounts:
           - name: {{$app_name}}-scripts
-            mountPath: /entry
+            mountPath: /scripts
           - name: {{$app_name}}-cfg
             mountPath: /config
           - name: datastore

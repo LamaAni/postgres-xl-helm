@@ -49,6 +49,16 @@ spec:
         resources:
 {{ toYaml $config_col.pvc | indent 8 }}
 {{- end }}
+{{- if .Values.WAL.archive.enable }}
+{{- if .Values.WAL.archive.pvc }}
+    - metadata:
+        name: wal-archive
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+{{ toYaml .Values.WAL.archive.pvc | indent 8 }}
+{{- end }}
+{{- end }}
 {{- if $config_col.addVolumeClaims }}
 {{ toYaml $config_col.addVolumeClaims | indent 4 }}
 {{- end }}
@@ -83,17 +93,17 @@ spec:
             name: pg
         command:
           - bash
-          - /entry/data_node_entrypoint
+          - /scripts/data_node_entrypoint
         readinessProbe:
           exec:
             command:
-            - /entry/probe_readiness_datanode
+            - /scripts/probe_readiness_datanode
           initialDelaySeconds: 5
           periodSeconds: 5
         livenessProbe:
           exec:
             command:
-            - /entry/probe_liveness_postgres
+            - /scripts/probe_liveness_postgres
           initialDelaySeconds: 30
           periodSeconds: 5
         resources:
@@ -117,11 +127,15 @@ spec:
 {{- include "print_password_envs" . | indent 10 }}
         volumeMounts:
           - name: {{$app_name}}-scripts
-            mountPath: /entry
+            mountPath: /scripts
           - name: {{$app_name}}-cfg
             mountPath: /config
           - name: datastore
             mountPath: {{ .Values.homedir }}/storage
+{{- if .Values.WAL.archive.enable }}
+          - name: wal-archive
+            mountPath: "{{ .Values.homedir }}/wal_archive"
+{{- end }}
 {{- if $config_col.volumeMounts }}
 {{ toYaml $config_col.volumeMounts | indent 10 }}
 {{- end }}
@@ -135,6 +149,12 @@ spec:
 {{- if $config_col.pvc }}{{- else }}
         - name: datastore
           emptyDir: {}
+{{- end }}
+{{- if .Values.WAL.archive.enable }}
+{{- if $config_col.pvc }}{{- else }}
+        - name: wal-archive
+          emptyDir: {}
+{{- end }}
 {{- end }}
         - name: {{$app_name}}-scripts
           configMap:

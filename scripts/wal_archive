@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+cur_path="$(dirname ${BASH_SOURCE[0]})"
+source "$cur_path/common.sh"
+source "$cur_path/initialize_env_dependencies"
+
+# loading env.
+SOURCE_WAL_FILE="$1"
+TARGET_WAL_ARCHIVE_NAME="$2"
+
+: ${WAL_ARCHIVE_PATH:="$STORAGE_MOUNT_PATH/wal_archive"}
+
+WAL_ARCHIVE_NODE_PATH="$WAL_ARCHIVE_PATH/$PG_NODE"
+
+if [ ! -d "$WAL_ARCHIVE_NODE_PATH" ]; then
+  mkdir -p "$WAL_ARCHIVE_NODE_PATH"
+  assert $? "Failed to create archive directory @ $WAL_ARCHIVE_NODE_PATH" || exit $?
+
+  log:archive "Created archive directory @ $WAL_ARCHIVE_NODE_PATH"
+fi
+
+archive_to_path="$WAL_ARCHIVE_NODE_PATH/$TARGET_WAL_ARCHIVE_NAME"
+
+# invoke backup logging.
+# TODO: replace with rsync
+cp -f "$SOURCE_WAL_FILE" "$archive_to_path"
+assert $? "Error while archiving WAL $SOURCE_WAL_FILE -> $archive_to_path"
+log:archive "Archived WAL file $SOURCE_WAL_FILE -> $archive_to_path"

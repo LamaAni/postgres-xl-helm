@@ -36,6 +36,22 @@ config:
     # append to all coordinators.
     coordinator:
 
+# applies only to datanodes. Coordinators 
+# are not stored, and are only considered part
+# of the cluster configuration.
+WAL:
+  archive:
+    # enable wal archiving.
+    enable: false
+    # default value for versions.
+    # TODO: add WAL auto versioning on datanode init
+    # will allow restore points.
+    version: "unversioned"
+    # will default to storage.
+    storage_path: /wal_archive
+    # if dose not exist will default to empty folder.
+    pvc:
+
 security:
   # If exists will load all passwords from secrets.
   passwords_secret_name:
@@ -62,6 +78,16 @@ on_load:
   # array of init scripts to be called only when the 
   # the database is first initialized.
   init:
+    # Example sccripts
+    ###
+    # - name: create_database.sh
+    #   script: |-
+    #     psql -c "CREATE DATABASE tester;"
+    #     export PGDATABASE="tester"
+    # - name: create_base_tables.sql
+    #   script: |-
+    #     CREATE SCHEMA test;
+    #     CREATE TABLE test.lama as (SELECT 'the brown rabbit' as col_1);
 
 # the coordinators external service.
 service:

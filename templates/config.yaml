@@ -25,10 +25,15 @@ data:
 {{- if .Values.config.append.proxy }}
 {{ .Values.config.append.proxy | indent 4 }}
 {{- end }}
-
   config_append_datanode: |
     # applies only on startup.
     log_min_messages = {{ lower .Values.config.log_level }}
+{{- if .Values.WAL.archive.enable }}
+    # archive the data
+    archive_mode = on
+    # archive command.
+    archive_command = '/scripts/wal_archive %p %f'
+{{- end }}
 {{- if .Values.config.append.datanode }}
 {{ .Values.config.append.datanode | indent 4 }}
 {{- end }}

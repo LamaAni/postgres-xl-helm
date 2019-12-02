@@ -84,7 +84,7 @@ spec:
         image: {{ .Values.image }}
         command:
           - bash
-          - /entry/gtm_entrypoint
+          - /scripts/gtm_entrypoint
         envFrom:
         - configMapRef:
             name: {{$app_name}}-envs
@@ -109,7 +109,7 @@ spec:
 {{- include "print_password_envs" . | indent 10 }}
         volumeMounts:
           - name: {{$app_name}}-scripts
-            mountPath: /entry
+            mountPath: /scripts
           - name: {{$app_name}}-cfg
             mountPath: /config
           - name: datastore

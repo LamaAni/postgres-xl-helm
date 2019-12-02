@@ -18,6 +18,8 @@
 : ${LOGGING_ERROR_PREFEX:=":ERROR"}
 : ${LOGGING_WARNING_PREFEX_COLOR:="\e[0;33m"}
 : ${LOGGING_WARNING_PREFEX:=":WARNING"}
+: ${LOGGING_ARCHIVE_PREFEX_COLOR:="\e[0;34m"}
+: ${LOGGING_ARCHIVE_PREFEX:=":INFO"}
 : ${LOGGING_SCRIPT_PREFEX:=":INFO"}
 : ${LOGGING_SCRIPT_PREFEX_COLOR:="\e[0;36m"}
 : ${LOGGING_SCRIPT_TEXT_COLOR:="\e[0;35m"}
@@ -61,6 +63,10 @@ function log:warning() {
 
 function log:script() {
   logging_core_print "SCRIPT" "$@"
+}
+
+function log:archive() {
+  logging_core_print "ARCHIVE" "$@"
 }
 
 function print_bash_error_stack(){
