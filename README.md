@@ -6,8 +6,9 @@ This chart allows for creating a multi container, multi process, distributed dat
 
 For a graph description of the connections structure see [here](https://www.2ndquadrant.com/wp-content/uploads/2019/04/Postgres-XL-Display.png.webp).
 
-#### Important note
-If using this chart as a database, please make sure you read the sections about persistence, backup and restore. 
+#### Important notes
+1. If using this chart as a database, please make sure you read the sections about persistence, backup and restore. 
+1. We have been trying to get an official blessing for the underlining docker image, [postgres-xl-docker](https://github.com/pavouk-0/postgres-xl-docker), but until now have gotten not response whatsoever from the official channel. Therefore if you are planning to use postgres-xl you may have to relay on payed support from www.2ndquadrant.com.
 
 ### BETA
 
