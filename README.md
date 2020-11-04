@@ -1,6 +1,6 @@
 # Postgres-XL HELM Chart
 
-### If you like it, star it, so other people would also grab a look!
+#### If you like it, star it, so other people would also grab a look!
 
 [Postgres-XL](https://www.postgres-xl.org/) is an all-purpose fully ACID open source multi node scalable SQL database solution, based on [PostgreSQL](https://www.postgresql.org/).
 
